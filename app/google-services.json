@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "971393964456",
+    "project_id": "coreteamproject",
+    "storage_bucket": "coreteamproject.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:971393964456:android:d38c05102f140a61bd259d",
+        "android_client_info": {
+          "package_name": "com.example.coreteamproject"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDNcJNEWHqthKybhKZfgspBd90aGAdv8Zs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

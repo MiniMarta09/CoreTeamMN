@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">CoreTeamProject</string>
+
+    <!-- FirebaseUI Strings -->
+    <!-- Aggiungendo queste stringhe, sovrascriviamo quelle di default in inglese -->
+    <string name="fui_sign_in_default">Accedi</string>
+    <string name="fui_button_text_save">Registrati</string>
+    <string name="fui_title_register_email">Registrazione</string>
+    <string name="fui_next_default">Avanti</string>
+    <string name="fui_welcome_back_password_prompt_body">Hai già usato %1$s per accedere. Inserisci la password per quell\'account.</string>
+    <string name="fui_new_user_header">Benvenuto</string>
+</resources>
