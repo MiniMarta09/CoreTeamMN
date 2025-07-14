@@ -67,6 +67,25 @@
 
         <!-- Data di nascita -->
         <TextView
+            android:text="Cognome"
+            android:textSize="14sp"
+            android:textColor="#666666"
+            android:layout_marginBottom="5dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+        <EditText
+            android:id="@+id/edit_cognome"
+            android:textSize="18sp"
+            android:textColor="#333333"
+            android:padding="12dp"
+            android:background="#F0F0F0"
+            android:layout_marginBottom="20dp"
+            android:enabled="false"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <TextView
             android:text="Data di nascita"
             android:textSize="14sp"
             android:textColor="#666666"
@@ -105,6 +124,24 @@
             android:layout_marginBottom="20dp"
             android:layout_width="match_parent"
             android:layout_height="wrap_content" />
+
+        <!-- Settore di Occupazione -->
+        <TextView
+            android:text="Settore di Occupazione"
+            android:textSize="14sp"
+            android:textColor="#666666"
+            android:layout_marginBottom="5dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+        <Spinner
+            android:id="@+id/spinner_settore"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="12dp"
+            android:background="#F0F0F0"
+            android:layout_marginBottom="20dp"
+            android:enabled="false" />
 
         <!-- Password -->
         <TextView

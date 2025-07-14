@@ -41,5 +41,13 @@ class HomeFragment : Fragment() {
                 .addToBackStack(null)
                 .commit()
         }
+
+        val buttonTeam: Button = view.findViewById(R.id.buttonTeam)
+        buttonTeam.setOnClickListener {
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.fragment_container, TeamFragment())
+                .addToBackStack(null)
+                .commit()
+        }
     }
 }

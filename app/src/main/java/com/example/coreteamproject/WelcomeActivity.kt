@@ -17,8 +17,7 @@ class WelcomeActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // Imposta il layout corretto per questa activity
-        setContentView(R.layout.activity_welcome)
+        setContentView(R.layout.activity_main)
 
         // Controlla se l'utente è già autenticato
         val currentUser = FirebaseAuth.getInstance().currentUser

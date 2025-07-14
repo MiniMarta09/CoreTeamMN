@@ -6,8 +6,10 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.EditText
+import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
@@ -23,13 +25,25 @@ class ProfileFragment : Fragment() {
 
     private lateinit var textName: TextView
     private lateinit var textEmail: TextView
+    private lateinit var editCognome: EditText
     private lateinit var editDataNascita: EditText
     private lateinit var editPassword: EditText
+    private lateinit var spinnerSettore: Spinner
     private lateinit var btnModifica: Button
     private lateinit var btnSalva: Button
     private lateinit var btnLogout: Button
 
     private var isEditing = false
+
+    // Opzioni per il settore di occupazione
+    private val settoriOccupazione = arrayOf(
+        "Seleziona settore",
+        "Contabilità e amministrazione",
+        "Magazzino e Logistica",
+        "Vendite",
+        "Risorse Umane",
+        "Assistenza Clienti"
+    )
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -39,12 +53,20 @@ class ProfileFragment : Fragment() {
 
         // Collega i campi
         textName = view.findViewById(R.id.text_name)
+        editCognome=view.findViewById(R.id.edit_cognome)
         textEmail = view.findViewById(R.id.text_email)
         editDataNascita = view.findViewById(R.id.edit_data_nascita)
         editPassword = view.findViewById(R.id.edit_password)
+        spinnerSettore = view.findViewById(R.id.spinner_settore)
         btnModifica = view.findViewById(R.id.btn_modifica)
         btnSalva = view.findViewById(R.id.btn_salva)
         btnLogout = view.findViewById(R.id.btn_logout)
+
+        // Configura lo spinner
+        val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, settoriOccupazione)
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        spinnerSettore.adapter = adapter
+        spinnerSettore.isEnabled = false
 
         // Mostra i dati dell'utente
         val user = FirebaseAuth.getInstance().currentUser
@@ -88,8 +110,10 @@ class ProfileFragment : Fragment() {
         isEditing = true
 
         // Abilita i campi editabili
+        editCognome.isEnabled = true
         editDataNascita.isEnabled = true
         editPassword.isEnabled = true
+        spinnerSettore.isEnabled = true
 
         // Mostra il pulsante Salva
         btnSalva.visibility = View.VISIBLE
@@ -105,8 +129,10 @@ class ProfileFragment : Fragment() {
         isEditing = false
 
         // Disabilita i campi
+        editCognome.isEnabled = false
         editDataNascita.isEnabled = false
         editPassword.isEnabled = false
+        spinnerSettore.isEnabled = false
 
         // Nascondi il pulsante Salva
         btnSalva.visibility = View.GONE
@@ -121,13 +147,23 @@ class ProfileFragment : Fragment() {
     private fun salvaDatiProfilo() {
         val user = FirebaseAuth.getInstance().currentUser
         if (user != null) {
+            val cognome = editCognome.text.toString()
             val dataNascita = editDataNascita.text.toString()
             val password = editPassword.text.toString()
+            val settoreSelezionato = spinnerSettore.selectedItem.toString()
+
+            // Verifica che sia stato selezionato un settore valido
+            if (settoreSelezionato == "Seleziona settore") {
+                Toast.makeText(requireContext(), "Seleziona un settore di occupazione", Toast.LENGTH_SHORT).show()
+                return
+            }
 
             // Crea un oggetto con i dati come nell'esempio del prof
             val profiloDipendente = hashMapOf(
+                "cognome" to cognome,
                 "dataNascita" to dataNascita,
                 "password" to password,
+                "settoreOccupazione" to settoreSelezionato,
                 "userId" to user.uid
             )
 
@@ -153,8 +189,18 @@ class ProfileFragment : Fragment() {
             .addOnSuccessListener { document ->
                 if (document != null && document.exists()) {
                     Log.d("ProfileFragment", "Dati trovati: ${document.data}")
+                    editCognome.setText(document.getString("cognome") ?: "")
                     editDataNascita.setText(document.getString("dataNascita") ?: "")
                     editPassword.setText(document.getString("password") ?: "")
+
+                    // Carica il settore di occupazione
+                    val settoreSalvato = document.getString("settoreOccupazione")
+                    if (settoreSalvato != null) {
+                        val position = settoriOccupazione.indexOf(settoreSalvato)
+                        if (position != -1) {
+                            spinnerSettore.setSelection(position)
+                        }
+                    }
                 } else {
                     Log.d("ProfileFragment", "Nessun documento trovato")
                 }

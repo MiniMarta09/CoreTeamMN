@@ -19,49 +19,60 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
+    <!-- Bottone 1 -->
     <Button
         android:id="@+id/buttonDiary"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="36dp"
+        android:layout_marginTop="60dp"
         android:backgroundTint="@color/purple_500"
         android:text="Diario"
         android:textColor="@color/white"
         android:textSize="18sp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.504"
+        app:layout_constraintTop_toBottomOf="@id/textViewHome"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/textViewHome" />
+        app:layout_constraintEnd_toEndOf="parent" />
 
+    <!-- Bottone 2 -->
     <Button
         android:id="@+id/buttonEvent"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="108dp"
+        android:layout_marginTop="60dp"
         android:backgroundTint="@color/purple_500"
         android:text="Eventi"
         android:textColor="@color/white"
         android:textSize="18sp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.501"
+        app:layout_constraintTop_toBottomOf="@id/buttonDiary"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/textViewHome" />
+        app:layout_constraintEnd_toEndOf="parent" />
 
+    <!-- Bottone 3 -->
     <Button
         android:id="@+id/buttonShift"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="168dp"
-        android:layout_marginBottom="50dp"
+        android:layout_marginTop="60dp"
         android:backgroundTint="@color/purple_500"
         android:text="Turni"
         android:textColor="@color/white"
         android:textSize="18sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.498"
+        app:layout_constraintTop_toBottomOf="@id/buttonEvent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/textViewHome"
-        app:layout_constraintVertical_bias="0.027" />
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- Bottone 4 -->
+    <Button
+        android:id="@+id/buttonTeam"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="60dp"
+        android:backgroundTint="@color/purple_500"
+        android:text="Team"
+        android:textColor="@color/white"
+        android:textSize="18sp"
+        app:layout_constraintTop_toBottomOf="@id/buttonShift"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
