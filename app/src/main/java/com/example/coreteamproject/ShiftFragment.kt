@@ -66,7 +66,18 @@ class ShiftFragment : Fragment() {
 
         // Bottone aggiungi
         btnAddShift.setOnClickListener {
-            showAddDialog()
+            // Verifica se la data selezionata è oggi o nel passato
+            val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+            val selectedDateObj = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(selectedDate)
+            val todayObj = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(today)
+            
+            if (selectedDateObj != null && todayObj != null && selectedDateObj.after(todayObj)) {
+                // La data selezionata è nel futuro
+                Toast.makeText(requireContext(), "Non puoi inserire turni per date future", Toast.LENGTH_LONG).show()
+            } else {
+                // La data è oggi o nel passato, permetti l'inserimento
+                showAddDialog()
+            }
         }
 
         // Carica turni di oggi
