@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     id("com.android.application")
     id("com.google.gms.google-services")
+    id("kotlin-kapt")
 }
 
 android {
@@ -37,6 +38,7 @@ android {
 
     buildFeatures {
         viewBinding = true
+        dataBinding = true
     }
 }
 
@@ -59,8 +61,9 @@ dependencies {
 
     implementation("androidx.navigation:navigation-fragment-ktx:2.8.9")
     implementation ("com.google.android.gms:play-services-auth:20.7.0")
-    
-    // ViewModel e LiveData
-    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.7")
-    implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.8.7")
+
+    val lifecycle_version = "2.8.7"
+    val activity_version = "1.10.1"
+    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:$lifecycle_version")
+    implementation("androidx.activity:activity-ktx:$activity_version")
 }

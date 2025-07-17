@@ -2,36 +2,23 @@ package com.example.coreteamproject
 
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
-import android.widget.Button
-import android.widget.EditText
-import android.widget.Spinner
-import android.widget.TextView
 import android.widget.Toast
+import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.Observer
+import com.example.coreteamproject.databinding.FragmentProfileBinding
 import com.firebase.ui.auth.AuthUI
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.ktx.firestore
-import com.google.firebase.ktx.Firebase
 
 class ProfileFragment : Fragment() {
 
-    // Inizializza Firestore come dice il prof
-    private val db = Firebase.firestore
-
-    private lateinit var textNameLastName: TextView
-    private lateinit var textEmail: TextView
-    private lateinit var editDataNascita: EditText
-    private lateinit var editPassword: EditText
-    private lateinit var spinnerSettore: Spinner
-    private lateinit var btnModifica: Button
-    private lateinit var btnSalva: Button
-    private lateinit var btnLogout: Button
-
+    private lateinit var binding: FragmentProfileBinding
+    private lateinit var viewModel: UsersViewModel
     private var isEditing = false
 
     // Opzioni per il settore di occupazione
@@ -47,50 +34,100 @@ class ProfileFragment : Fragment() {
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
-        val view = inflater.inflate(R.layout.fragment_profile, container, false)
+    ): View {
+        // Inizializza il data binding
+        binding = DataBindingUtil.inflate(
+            inflater, R.layout.fragment_profile, container, false
+        )
 
-        // Collega i campi
-        textNameLastName = view.findViewById(R.id.text_namelastname)
-        textEmail = view.findViewById(R.id.text_email)
-        editDataNascita = view.findViewById(R.id.edit_data_nascita)
-        editPassword = view.findViewById(R.id.edit_password)
-        spinnerSettore = view.findViewById(R.id.spinner_settore)
-        btnModifica = view.findViewById(R.id.btn_modifica)
-        btnSalva = view.findViewById(R.id.btn_salva)
-        btnLogout = view.findViewById(R.id.btn_logout)
+        // Inizializza il ViewModel
+        viewModel = ViewModelProvider(this)[UsersViewModel::class.java]
+
+        // Imposta il ViewModel nel binding
+        binding.viewModel = viewModel
+        binding.lifecycleOwner = this
 
         // Configura lo spinner
+        setupSpinner()
+
+        // Configura gli observer
+        setupObservers()
+
+        // Mostra i dati base dell'utente
+        setupUserData()
+
+        // Configura i listener dei pulsanti
+        setupClickListeners()
+
+        // Carica il profilo dell'utente
+        viewModel.caricaProfiloUtente()
+
+        return binding.root
+    }
+
+    private fun setupSpinner() {
         val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, settoriOccupazione)
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        spinnerSettore.adapter = adapter
-        spinnerSettore.isEnabled = false
+        binding.spinnerSettore.adapter = adapter
+        binding.spinnerSettore.isEnabled = false
+    }
 
-        // Mostra i dati dell'utente
+    private fun setupObservers() {
+        // Osserva il profilo dell'utente corrente
+        viewModel.currentUserProfile.observe(viewLifecycleOwner, Observer { dipendente ->
+            if (dipendente != null) {
+                aggiornaCampiProfilo(dipendente)
+            }
+        })
+
+        // Osserva lo stato di loading
+        viewModel.isLoading.observe(viewLifecycleOwner, Observer { isLoading ->
+            binding.progressBarProfile.visibility = if (isLoading) View.VISIBLE else View.GONE
+        })
+
+        // Osserva gli errori
+        viewModel.error.observe(viewLifecycleOwner, Observer { error ->
+            if (error != null) {
+                Toast.makeText(requireContext(), error, Toast.LENGTH_SHORT).show()
+                viewModel.resetError()
+            }
+        })
+
+        // Osserva il successo del salvataggio
+        viewModel.saveSuccess.observe(viewLifecycleOwner, Observer { success ->
+            if (success) {
+                Toast.makeText(requireContext(), "Dati salvati!", Toast.LENGTH_SHORT).show()
+                disabilitaModifica()
+                viewModel.resetSaveSuccess()
+            }
+        })
+    }
+
+    private fun setupUserData() {
         val user = FirebaseAuth.getInstance().currentUser
         if (user != null) {
-            // Display the full name (nome e cognome)
-            textNameLastName.text = user.displayName ?: "Non disponibile"
-            textEmail.text = user.email ?: "Non disponibile"
-
-            // Carica i dati dal database
-            leggiDatiProfilo(user.uid)
+            binding.textNamelastname.text = user.displayName ?: "Non disponibile"
+            binding.textEmail.text = user.email ?: "Non disponibile"
         }
+    }
 
+    private fun setupClickListeners() {
         // Pulsante Modifica Profilo
-        btnModifica.setOnClickListener {
+        binding.btnModifica.setOnClickListener {
             if (!isEditing) {
                 abilitaModifica()
+            } else {
+                disabilitaModifica()
             }
         }
 
         // Pulsante Salva
-        btnSalva.setOnClickListener {
+        binding.btnSalva.setOnClickListener {
             salvaDatiProfilo()
         }
 
         // Pulsante Esci
-        btnLogout.setOnClickListener {
+        binding.btnLogout.setOnClickListener {
             AuthUI.getInstance()
                 .signOut(requireContext())
                 .addOnCompleteListener {
@@ -100,107 +137,60 @@ class ProfileFragment : Fragment() {
                     requireActivity().finish()
                 }
         }
+    }
 
-        return view
+    private fun aggiornaCampiProfilo(dipendente: Dipendente) {
+        binding.editDataNascita.setText(dipendente.dataNascita)
+        // Non mostrare la password per sicurezza
+        binding.editPassword.setText("")
+
+        // Imposta il settore di occupazione
+        if (dipendente.settoreOccupazione.isNotEmpty()) {
+            val position = settoriOccupazione.indexOf(dipendente.settoreOccupazione)
+            if (position != -1) {
+                binding.spinnerSettore.setSelection(position)
+            }
+        }
     }
 
     private fun abilitaModifica() {
         isEditing = true
 
         // Abilita i campi editabili
-        editDataNascita.isEnabled = true
-        editPassword.isEnabled = true
-        spinnerSettore.isEnabled = true
+        binding.editDataNascita.isEnabled = true
+        binding.editPassword.isEnabled = true
+        binding.spinnerSettore.isEnabled = true
 
         // Mostra il pulsante Salva
-        btnSalva.visibility = View.VISIBLE
-        btnModifica.text = "Annulla"
-
-        // Cambia il comportamento del pulsante Modifica
-        btnModifica.setOnClickListener {
-            disabilitaModifica()
-        }
+        binding.btnSalva.visibility = View.VISIBLE
+        binding.btnModifica.text = "Annulla"
     }
 
     private fun disabilitaModifica() {
         isEditing = false
 
         // Disabilita i campi
-        editDataNascita.isEnabled = false
-        editPassword.isEnabled = false
-        spinnerSettore.isEnabled = false
+        binding.editDataNascita.isEnabled = false
+        binding.editPassword.isEnabled = false
+        binding.spinnerSettore.isEnabled = false
 
         // Nascondi il pulsante Salva
-        btnSalva.visibility = View.GONE
-        btnModifica.text = "Modifica Profilo"
-
-        // Ripristina il comportamento del pulsante Modifica
-        btnModifica.setOnClickListener {
-            abilitaModifica()
-        }
+        binding.btnSalva.visibility = View.GONE
+        binding.btnModifica.text = "Modifica Profilo"
     }
 
     private fun salvaDatiProfilo() {
-        val user = FirebaseAuth.getInstance().currentUser
-        if (user != null) {
-            val dataNascita = editDataNascita.text.toString()
-            val password = editPassword.text.toString()
-            val settoreSelezionato = spinnerSettore.selectedItem.toString()
+        val dataNascita = binding.editDataNascita.text.toString()
+        val password = binding.editPassword.text.toString()
+        val settoreSelezionato = binding.spinnerSettore.selectedItem.toString()
 
-            // Verifica che sia stato selezionato un settore valido
-            if (settoreSelezionato == "Seleziona settore") {
-                Toast.makeText(requireContext(), "Seleziona un settore di occupazione", Toast.LENGTH_SHORT).show()
-                return
-            }
-
-            // Crea un oggetto con i dati come nell'esempio del prof
-            val profiloDipendente = hashMapOf(
-                "namelastname" to (user.displayName ?: ""),
-                "dataNascita" to dataNascita,
-                "password" to password,
-                "settoreOccupazione" to settoreSelezionato,
-                "userId" to user.uid
-            )
-
-            // Salva usando il metodo set() come dice il prof
-            db.collection("Profili").document(user.uid)
-                .set(profiloDipendente)
-                .addOnSuccessListener {
-                    Log.d("ProfileFragment", "Profilo salvato con successo!")
-                    Toast.makeText(requireContext(), "Dati salvati!", Toast.LENGTH_SHORT).show()
-                    disabilitaModifica()
-                }
-                .addOnFailureListener { e ->
-                    Log.w("ProfileFragment", "Errore nel salvataggio", e)
-                    Toast.makeText(requireContext(), "Errore nel salvataggio", Toast.LENGTH_SHORT).show()
-                }
+        // Verifica che sia stato selezionato un settore valido
+        if (settoreSelezionato == "Seleziona settore") {
+            Toast.makeText(requireContext(), "Seleziona un settore di occupazione", Toast.LENGTH_SHORT).show()
+            return
         }
-    }
 
-    private fun leggiDatiProfilo(userId: String) {
-        // Leggi i dati come dice il prof
-        db.collection("Profili").document(userId)
-            .get()
-            .addOnSuccessListener { document ->
-                if (document != null && document.exists()) {
-                    Log.d("ProfileFragment", "Dati trovati: ${document.data}")
-                    editDataNascita.setText(document.getString("dataNascita") ?: "")
-                    editPassword.setText(document.getString("password") ?: "")
-
-                    // Carica il settore di occupazione
-                    val settoreSalvato = document.getString("settoreOccupazione")
-                    if (settoreSalvato != null) {
-                        val position = settoriOccupazione.indexOf(settoreSalvato)
-                        if (position != -1) {
-                            spinnerSettore.setSelection(position)
-                        }
-                    }
-                } else {
-                    Log.d("ProfileFragment", "Nessun documento trovato")
-                }
-            }
-            .addOnFailureListener { exception ->
-                Log.w("ProfileFragment", "Errore nel leggere i dati", exception)
-            }
+        // Salva tramite il ViewModel
+        viewModel.salvaProfilo(dataNascita, password, settoreSelezionato)
     }
 }
