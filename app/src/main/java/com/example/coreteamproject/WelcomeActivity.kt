@@ -2,6 +2,8 @@ package com.example.coreteamproject
 
 import android.content.Intent
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
@@ -17,13 +19,15 @@ class WelcomeActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        setContentView(R.layout.activity_welcome)
 
         // Controlla se l'utente è già autenticato
         val currentUser = FirebaseAuth.getInstance().currentUser
         if (currentUser != null) {
-            // Utente già autenticato, vai direttamente alla MainActivity
-            startMainActivity()
+            // Utente già autenticato, vai direttamente alla MainActivity dopo aver mostrato il logo
+            Handler(Looper.getMainLooper()).postDelayed({
+                startMainActivity()
+            }, 2000) // 2 secondi
             return
         }
 
@@ -34,6 +38,13 @@ class WelcomeActivity : AppCompatActivity() {
             onSignInResult(res)
         }
 
+        // Mostra il logo per 2 secondi, poi procedi con l'autenticazione
+        Handler(Looper.getMainLooper()).postDelayed({
+            startAuthentication()
+        }, 2000) // 2 secondi
+    }
+
+    private fun startAuthentication() {
         val providers = arrayListOf(
             AuthUI.IdpConfig.EmailBuilder().build()
         )
@@ -44,7 +55,6 @@ class WelcomeActivity : AppCompatActivity() {
             .setAvailableProviders(providers)
             .setTheme(R.style.Theme_CoreTeamProject)
             .build()
-
 
         signInLauncher.launch(signInIntent)
     }

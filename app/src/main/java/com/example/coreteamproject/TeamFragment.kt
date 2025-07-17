@@ -83,8 +83,11 @@ class TeamFragment : Fragment() {
             return
         }
 
+        Log.d("TeamFragment", "Mostrando ${dipendenti.size} dipendenti:")
+        
         // Crea una card per ogni dipendente
         for (dipendente in dipendenti) {
+            Log.d("TeamFragment", "Dipendente: ${dipendente.namelastname}, Email: '${dipendente.email}'")
             val cardView = creaDipendenteCard(dipendente)
             binding.teamMembersLayout.addView(cardView)
         }
@@ -146,6 +149,18 @@ class TeamFragment : Fragment() {
             setTextColor(resources.getColor(android.R.color.darker_gray, null))
         }
 
+        val textEmail = TextView(requireContext()).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                setMargins(0, 0, 0, 8)
+            }
+            text = "Email: ${dipendente.email}"
+            textSize = 14f
+            setTextColor(resources.getColor(android.R.color.darker_gray, null))
+        }
+
         // TextView per la data di nascita
         val textDataNascita = TextView(requireContext()).apply {
             layoutParams = LinearLayout.LayoutParams(
@@ -160,6 +175,7 @@ class TeamFragment : Fragment() {
         // Aggiungi tutti i TextView al LinearLayout
         linearLayout.addView(textNameLastName)
         linearLayout.addView(textSettore)
+        linearLayout.addView(textEmail)
         linearLayout.addView(textDataNascita)
 
         // Aggiungi il LinearLayout al CardView

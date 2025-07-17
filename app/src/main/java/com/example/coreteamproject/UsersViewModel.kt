@@ -61,13 +61,21 @@ class UsersViewModel : ViewModel() {
                     try {
                         val userId = document.getString("userId") ?: ""
                         val namelastname = document.getString("namelastname") ?: ""
+                        val email = document.getString("email") ?: ""
                         val dataNascita = document.getString("dataNascita") ?: ""
                         val settoreOccupazione = document.getString("settoreOccupazione") ?: ""
+
+                        // Log per debug
+                        Log.d("UsersViewModel", "Documento ${document.id}:")
+                        Log.d("UsersViewModel", "  - namelastname: '$namelastname'")
+                        Log.d("UsersViewModel", "  - email: '$email'")
+                        Log.d("UsersViewModel", "  - dataNascita: '$dataNascita'")
+                        Log.d("UsersViewModel", "  - settoreOccupazione: '$settoreOccupazione'")
 
                         val dipendente = Dipendente(
                             userId = userId,
                             namelastname = namelastname,
-                            email = "",
+                            email = email,
                             dataNascita = dataNascita,
                             settoreOccupazione = settoreOccupazione
                         )
@@ -144,6 +152,7 @@ class UsersViewModel : ViewModel() {
             val profiloDipendente = hashMapOf(
                 "namelastname" to (user.displayName ?: ""),
                 "dataNascita" to dataNascita,
+                "email" to user.email,
                 "password" to password,
                 "settoreOccupazione" to settoreOccupazione,
                 "userId" to user.uid
