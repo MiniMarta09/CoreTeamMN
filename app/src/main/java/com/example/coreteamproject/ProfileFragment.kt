@@ -23,9 +23,8 @@ class ProfileFragment : Fragment() {
     // Inizializza Firestore come dice il prof
     private val db = Firebase.firestore
 
-    private lateinit var textName: TextView
+    private lateinit var textNameLastName: TextView
     private lateinit var textEmail: TextView
-    private lateinit var editCognome: EditText
     private lateinit var editDataNascita: EditText
     private lateinit var editPassword: EditText
     private lateinit var spinnerSettore: Spinner
@@ -52,8 +51,7 @@ class ProfileFragment : Fragment() {
         val view = inflater.inflate(R.layout.fragment_profile, container, false)
 
         // Collega i campi
-        textName = view.findViewById(R.id.text_name)
-        editCognome=view.findViewById(R.id.edit_cognome)
+        textNameLastName = view.findViewById(R.id.text_namelastname)
         textEmail = view.findViewById(R.id.text_email)
         editDataNascita = view.findViewById(R.id.edit_data_nascita)
         editPassword = view.findViewById(R.id.edit_password)
@@ -71,8 +69,8 @@ class ProfileFragment : Fragment() {
         // Mostra i dati dell'utente
         val user = FirebaseAuth.getInstance().currentUser
         if (user != null) {
-            // Display only the name without any welcome message
-            textName.text = user.displayName?.split(" ")?.firstOrNull() ?: "Non disponibile"
+            // Display the full name (nome e cognome)
+            textNameLastName.text = user.displayName ?: "Non disponibile"
             textEmail.text = user.email ?: "Non disponibile"
 
             // Carica i dati dal database
@@ -110,7 +108,6 @@ class ProfileFragment : Fragment() {
         isEditing = true
 
         // Abilita i campi editabili
-        editCognome.isEnabled = true
         editDataNascita.isEnabled = true
         editPassword.isEnabled = true
         spinnerSettore.isEnabled = true
@@ -129,7 +126,6 @@ class ProfileFragment : Fragment() {
         isEditing = false
 
         // Disabilita i campi
-        editCognome.isEnabled = false
         editDataNascita.isEnabled = false
         editPassword.isEnabled = false
         spinnerSettore.isEnabled = false
@@ -147,7 +143,6 @@ class ProfileFragment : Fragment() {
     private fun salvaDatiProfilo() {
         val user = FirebaseAuth.getInstance().currentUser
         if (user != null) {
-            val cognome = editCognome.text.toString()
             val dataNascita = editDataNascita.text.toString()
             val password = editPassword.text.toString()
             val settoreSelezionato = spinnerSettore.selectedItem.toString()
@@ -160,7 +155,7 @@ class ProfileFragment : Fragment() {
 
             // Crea un oggetto con i dati come nell'esempio del prof
             val profiloDipendente = hashMapOf(
-                "cognome" to cognome,
+                "namelastname" to (user.displayName ?: ""),
                 "dataNascita" to dataNascita,
                 "password" to password,
                 "settoreOccupazione" to settoreSelezionato,
@@ -189,7 +184,6 @@ class ProfileFragment : Fragment() {
             .addOnSuccessListener { document ->
                 if (document != null && document.exists()) {
                     Log.d("ProfileFragment", "Dati trovati: ${document.data}")
-                    editCognome.setText(document.getString("cognome") ?: "")
                     editDataNascita.setText(document.getString("dataNascita") ?: "")
                     editPassword.setText(document.getString("password") ?: "")
 
