@@ -217,11 +217,18 @@ class ShiftFragment : Fragment() {
     }
 
     private fun saveShift(title: String, time: String, description: String) {
+        val currentUser = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
+        if (currentUser == null) {
+            Toast.makeText(context, "Errore: utente non autenticato", Toast.LENGTH_SHORT).show()
+            return
+        }
+        
         val shift = hashMapOf(
             "title" to title,
             "time" to time,
             "description" to description,
-            "date" to selectedDate
+            "date" to selectedDate,
+            "userId" to currentUser.uid
         )
 
         db.collection("shifts")
@@ -238,9 +245,20 @@ class ShiftFragment : Fragment() {
 
     private fun loadShifts(date: String) {
         shiftsLayout.removeAllViews()
+        
+        val currentUser = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
+        if (currentUser == null) {
+            val textView = TextView(requireContext())
+            textView.text = "Errore: utente non autenticato"
+            textView.textSize = 16f
+            textView.setPadding(20, 20, 20, 20)
+            shiftsLayout.addView(textView)
+            return
+        }
 
         db.collection("shifts")
             .whereEqualTo("date", date)
+            .whereEqualTo("userId", currentUser.uid)
             .get()
             .addOnSuccessListener { documents ->
                 if (documents.isEmpty) {
@@ -266,37 +284,69 @@ class ShiftFragment : Fragment() {
     }
     
     private fun loadMonthlyHours() {
-        // Otteniamo il mese dalla data selezionata (yyyy-MM)
-        val selectedMonth = selectedDate.substring(0, 7)
-        currentMonth = selectedMonth
-        
-        db.collection("shifts")
-            .whereGreaterThanOrEqualTo("date", "$selectedMonth-01")
-            .whereLessThanOrEqualTo("date", "$selectedMonth-31")
-            .get()
-            .addOnSuccessListener { documents ->
-                var totalMinutes = 0
-                
-                for (document in documents) {
-                    val shift = document.data
-                    val timeRange = shift["time"] as String
+        try {
+            // Otteniamo il mese dalla data selezionata (yyyy-MM)
+            val selectedMonth = selectedDate.substring(0, 7)
+            currentMonth = selectedMonth
+            
+            // Costruiamo le date di inizio e fine mese correttamente
+            val startOfMonth = "$selectedMonth-01"
+            val endOfMonth = "$selectedMonth-31"
+            
+            val currentUser = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
+            if (currentUser == null) {
+                textMonthlyHours.text = "Ore $selectedMonth: Errore utente"
+                return
+            }
+            
+            // Approccio semplificato: carichiamo tutti i turni del mese e filtriamo
+            db.collection("shifts")
+                .whereGreaterThanOrEqualTo("date", startOfMonth)
+                .whereLessThanOrEqualTo("date", endOfMonth)
+                .get()
+                .addOnSuccessListener { documents ->
+                    var totalMinutes = 0
                     
-                    // Calcoliamo le ore lavorate per questo turno
-                    val shiftMinutes = calculateMinutesFromTimeRange(timeRange)
-                    totalMinutes += shiftMinutes
+                    for (document in documents) {
+                        try {
+                            val shift = document.data
+                            val shiftUserId = shift["userId"] as? String
+                            
+                            // Include il turno SOLO se ha userId e corrisponde all'utente corrente
+                            if (shiftUserId == currentUser.uid) {
+                                val timeRange = shift["time"] as? String
+                                if (timeRange != null && timeRange.isNotEmpty()) {
+                                    val shiftMinutes = calculateMinutesFromTimeRange(timeRange)
+                                    if (shiftMinutes > 0) {
+                                        totalMinutes += shiftMinutes
+                                    }
+                                }
+                            }
+                        } catch (e: Exception) {
+                            // Ignora turni con dati malformati
+                            continue
+                        }
+                    }
+                    
+                    // Aggiorniamo il display
+                    updateMonthlyHoursDisplay(totalMinutes, selectedMonth)
                 }
-                
-                // Convertiamo i minuti totali in ore e minuti
-                val hours = totalMinutes / 60
-                val minutes = totalMinutes % 60
-                
-                // Aggiorniamo la TextView
-                val monthName = getMonthName(selectedMonth.substring(5, 7).toInt() - 1)
-                textMonthlyHours.text = "Ore $monthName: ${hours}h ${minutes}m"
-            }
-            .addOnFailureListener {
-                Toast.makeText(requireContext(), "Errore nel calcolo delle ore mensili", Toast.LENGTH_SHORT).show()
-            }
+                .addOnFailureListener { exception ->
+                    textMonthlyHours.text = "Ore $selectedMonth: Errore caricamento"
+                }
+        } catch (e: Exception) {
+            textMonthlyHours.text = "Ore: Errore calcolo"
+        }
+    }
+    
+    private fun updateMonthlyHoursDisplay(totalMinutes: Int, selectedMonth: String) {
+        // Convertiamo i minuti totali in ore e minuti
+        val hours = totalMinutes / 60
+        val minutes = totalMinutes % 60
+        
+        // Aggiorniamo la TextView
+        val monthName = getMonthName(selectedMonth.substring(5, 7).toInt() - 1)
+        textMonthlyHours.text = "Ore $monthName: ${hours}h ${minutes}m"
     }
     
     private fun calculateMinutesFromTimeRange(timeRange: String): Int {
