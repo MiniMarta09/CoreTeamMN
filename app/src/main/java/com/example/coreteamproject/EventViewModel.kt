@@ -3,6 +3,8 @@ package com.example.coreteamproject
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -39,6 +41,9 @@ class EventViewModel : ViewModel() {
     val deleteSuccess: LiveData<Boolean> = _deleteSuccess
     
     private val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+    private val db = FirebaseFirestore.getInstance()
+    private val auth = FirebaseAuth.getInstance()
+    private var currentDate = ""
     
     init {
         // Inizializza con la data corrente
@@ -54,23 +59,58 @@ class EventViewModel : ViewModel() {
     fun updateSelectedDate(year: Int, month: Int, dayOfMonth: Int) {
         val calendar = Calendar.getInstance()
         calendar.set(year, month, dayOfMonth)
-        _displayDate.value = dateFormat.format(calendar.time)
+        currentDate = dateFormat.format(calendar.time)
+        _displayDate.value = currentDate
+        
+        // Carica gli eventi per la data selezionata
+        caricaEventi()
     }
     
     fun salvaEvento(title: String, time: String, description: String) {
         _isLoading.value = true
+        val tempId = UUID.randomUUID().toString()
         val nuovoEvento = Evento(
-            id = UUID.randomUUID().toString(),
+            id = tempId,
             title = title,
             time = time,
             description = description
         )
+        
         val currentEvents = _eventi.value?.toMutableList() ?: mutableListOf()
         currentEvents.add(nuovoEvento)
         _eventi.value = currentEvents
-        _isEmpty.value = currentEvents.isEmpty()
+        _isEmpty.value = false
         _saveSuccess.value = true
-        _isLoading.value = false
+        
+        // Prepara i dati per Firestore usando la collezione shifts
+        val eventoMap = hashMapOf(
+            "title" to title,
+            "time" to time,
+            "description" to description,
+            "date" to currentDate,
+            "userId" to (auth.currentUser?.uid ?: "utente_sconosciuto"),
+            "timestamp" to Calendar.getInstance().timeInMillis,
+            "isEvent" to true  // Campo identificativo per distinguere dagli shift normali
+        )
+        
+        // Salva nella collezione shifts
+        db.collection("shifts")
+            .add(eventoMap)
+            .addOnSuccessListener { documentReference ->
+                // Aggiorna l'ID con quello reale di Firestore
+                val currentEvents = _eventi.value?.toMutableList() ?: mutableListOf()
+                val index = currentEvents.indexOfFirst { it.id == tempId }
+                if (index != -1) {
+                    val eventoConIdReale = currentEvents[index].copy(id = documentReference.id)
+                    currentEvents[index] = eventoConIdReale
+                    _eventi.value = currentEvents
+                }
+                _isLoading.value = false
+            }
+            .addOnFailureListener {
+                _isLoading.value = false
+                // Lascia l'evento in UI anche se fallisce il salvataggio su Firestore
+            }
     }
     
     fun eliminaEvento(eventoId: String) {
@@ -82,6 +122,18 @@ class EventViewModel : ViewModel() {
             _eventi.value = currentEvents
             _isEmpty.value = currentEvents.isEmpty()
             _deleteSuccess.value = true
+            
+            // Elimina dalla collezione shifts
+            db.collection("shifts")
+                .document(eventoId)
+                .delete()
+                .addOnSuccessListener {
+                    _isLoading.value = false
+                }
+                .addOnFailureListener {
+                    _isLoading.value = false
+                    // L'evento è già stato rimosso dall'UI
+                }
         }
         _isLoading.value = false
     }
@@ -95,6 +147,55 @@ class EventViewModel : ViewModel() {
         val currentEvents = _eventi.value ?: emptyList()
         if (index in 0 until currentEvents.size) {
             eliminaEvento(currentEvents[index].id)
+        }
+    }
+    
+    // Carica eventi per la data corrente
+    private fun caricaEventi() {
+        _isLoading.value = true
+        _error.value = null
+        
+        try {
+            // Ottieni l'utente
+            val userId = auth.currentUser?.uid
+            if (userId == null) {
+                _eventi.value = emptyList()
+                _isEmpty.value = true
+                _isLoading.value = false
+                return
+            }
+            
+            // Query sulla collezione shifts filtrando solo per eventi e data (visibili a tutti)
+            db.collection("shifts")
+                .whereEqualTo("date", currentDate)
+                .whereEqualTo("isEvent", true)  // Filtra solo gli eventi, senza filtro userId
+                .get()
+                .addOnSuccessListener { querySnapshot ->
+                    val eventiList = mutableListOf<Evento>()
+                    
+                    for (document in querySnapshot) {
+                        val evento = Evento(
+                            id = document.id,
+                            title = document.getString("title") ?: "",
+                            time = document.getString("time") ?: "",
+                            description = document.getString("description") ?: ""
+                        )
+                        eventiList.add(evento)
+                    }
+                    
+                    _eventi.value = eventiList
+                    _isEmpty.value = eventiList.isEmpty()
+                    _isLoading.value = false
+                }
+                .addOnFailureListener {
+                    _eventi.value = emptyList()
+                    _isEmpty.value = true
+                    _isLoading.value = false
+                }
+        } catch (Exception: Exception) {
+            _eventi.value = emptyList()
+            _isEmpty.value = true
+            _isLoading.value = false
         }
     }
     
