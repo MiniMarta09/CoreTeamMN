@@ -6,12 +6,28 @@ import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.auth.FirebaseAuth
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import android.content.res.ColorStateList
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.os.Build
+import android.Manifest
+import android.content.Context
+import androidx.core.app.ActivityCompat
 
 class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        createNotificationChannel()
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                0
+            )
+        }
 
         val toolbar = findViewById<com.google.android.material.appbar.MaterialToolbar>(R.id.toolbar)
         setSupportActionBar(toolbar)
@@ -25,7 +41,7 @@ class MainActivity : AppCompatActivity() {
             .replace(R.id.fragment_container, HomeFragment())
             .commit()
 
-        // Gestione del BottomNavigationView (la tua logica originale)
+        // Gestione del BottomNavigationView
         bottomNavigation.setOnItemSelectedListener { item ->
             val selectedFragment = when (item.itemId) {
                 R.id.nav_home -> HomeFragment()
@@ -62,5 +78,20 @@ class MainActivity : AppCompatActivity() {
 
         bottomNavigation.itemIconTintList = ColorStateList(states, iconColors)
         bottomNavigation.itemTextColor = ColorStateList(states, textColors)
+    }
+
+    private fun createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                "default_channel",
+                "Default Channel",
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                description = "Channel for general notifications"
+            }
+
+            val notificationManager = getSystemService(NotificationManager::class.java)
+            notificationManager.createNotificationChannel(channel)
+        }
     }
 }
