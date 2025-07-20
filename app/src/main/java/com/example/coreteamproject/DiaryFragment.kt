@@ -12,11 +12,14 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.Observer
 import com.example.coreteamproject.databinding.FragmentDiaryBinding
 
+//Fragment per gestire il diario
 class DiaryFragment : Fragment() {
 
+    //Variabili per databinding e viewmodel
     private lateinit var binding: FragmentDiaryBinding
     private lateinit var viewModel: DiaryViewModel
 
+   //Metodo chiamato alla creazione del fragment
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -36,12 +39,13 @@ class DiaryFragment : Fragment() {
         // Configura gli observer
         setupObservers()
 
-        // Imposta i listener
+        // Imposta il listener per i pulsanti
         setupListeners()
 
         return binding.root
     }
 
+    //Configura gli observer per valutare i cambiamenti del viewmodel
     private fun setupObservers() {
         // Observer per le valutazioni
         viewModel.valutazioni.observe(viewLifecycleOwner, Observer { valutazioni ->
@@ -72,6 +76,7 @@ class DiaryFragment : Fragment() {
         })
     }
 
+    //Configura tutti i listener per i controlli dell'interfaccia
     private fun setupListeners() {
         // Pulsante + per aggiungere valutazione
         binding.btnAggiungiValutazione.setOnClickListener {
@@ -93,7 +98,7 @@ class DiaryFragment : Fragment() {
             viewModel.nascondiFormValutazione()
         }
 
-        // Listener per i SeekBar
+        // Listener per i SeekBarStress
         binding.seekbarStress.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 binding.textStressValue.text = "${progress + 1}"
@@ -105,6 +110,7 @@ class DiaryFragment : Fragment() {
             override fun onStopTrackingTouch(seekBar: SeekBar?) {}
         })
 
+        //Listener per i SeekBarColleghi
         binding.seekbarColleghi.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 binding.textColleghiValue.text = "${progress + 1}"
@@ -116,6 +122,7 @@ class DiaryFragment : Fragment() {
             override fun onStopTrackingTouch(seekBar: SeekBar?) {}
         })
 
+       //Listener per i SeekBarSoddisfazione
         binding.seekbarSoddisfazione.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 binding.textSoddisfazioneValue.text = "${progress + 1}"
@@ -128,6 +135,7 @@ class DiaryFragment : Fragment() {
         })
     }
 
+    //Aggiornamento valutazioni
     private fun aggiornaListaValutazioni(valutazioni: List<ValutazioneMensile>) {
         binding.recyclerValutazioni.removeAllViews()
 
@@ -145,6 +153,7 @@ class DiaryFragment : Fragment() {
         binding.recyclerValutazioni.addView(textNoData)
     }
 
+   //Aggiunta valutazione alla lista
     private fun aggiungiValutazioneAllaLista(valutazione: ValutazioneMensile) {
         // Crea il container principale
         val containerLayout = LinearLayout(requireContext())
@@ -152,14 +161,15 @@ class DiaryFragment : Fragment() {
         containerLayout.setPadding(16, 16, 16, 16)
         containerLayout.setBackgroundColor(0xFFF5F5F5.toInt()) // grigio chiaro
 
-        val layoutParams = LinearLayout.LayoutParams(
+     //Margini e dimensioni
+       val layoutParams = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
             LinearLayout.LayoutParams.WRAP_CONTENT
         )
         layoutParams.setMargins(0, 0, 0, 16) // margine sotto
         containerLayout.layoutParams = layoutParams
 
-        // Titolo mese/anno
+        // Titolo con mese/anno
         val textMeseAnno = TextView(requireContext())
         textMeseAnno.text = "Mese: ${valutazione.meseAnno}"
         textMeseAnno.textSize = 18f
@@ -189,7 +199,7 @@ class DiaryFragment : Fragment() {
         textSoddisfazione.setPadding(0, 0, 0, 8)
         containerLayout.addView(textSoddisfazione)
 
-        // Commento (solo se presente)
+        // Commento
         if (valutazione.commento.isNotEmpty()) {
             val textCommento = TextView(requireContext())
             textCommento.text = "Commento: ${valutazione.commento}"
