@@ -1,24 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="@color/background_cream"
-    android:padding="16dp">
+    xmlns:tools="http://schemas.android.com/tools">
 
-    <TextView
-        android:id="@+id/textViewShift"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Turni in Calendario"
-        android:textSize="28sp"
-        android:textColor="@color/purple_500"
-        android:textStyle="bold"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+    <data>
+        <import type="android.view.View" />
+        <variable
+            name="viewModel"
+            type="com.example.coreteamproject.ShiftViewModel" />
+    </data>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/background_cream"
+        android:padding="16dp">
+
+        <TextView
+            android:id="@+id/textViewShift"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Turni in Calendario"
+            android:textSize="28sp"
+            android:textColor="@color/purple_500"
+            android:textStyle="bold"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
 
     <TextView
         android:id="@+id/textDescriptionShift"
@@ -27,7 +35,7 @@
         android:text="Il tuo calendario dei turni mensili"
         android:textColor="@color/black"
         android:textSize="16sp"
-        android:textStyle="bold"
+        android:textStyle="italic"
         app:layout_constraintTop_toBottomOf="@id/textViewShift"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.498"
@@ -49,7 +57,7 @@
         android:id="@+id/btnAddShift"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="+ Aggiungi"
+        android:text="+ Aggiungi Turno"
         android:backgroundTint="@color/purple_500"
         android:textColor="@color/white"
         android:layout_marginTop="16dp"
@@ -61,7 +69,7 @@
         android:id="@+id/textSelectedDate"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Turni per: oggi"
+        android:text="@{viewModel.displayDate}"
         android:textSize="16sp"
         android:textColor="@color/purple_500"
         android:textStyle="bold"
@@ -86,20 +94,32 @@
 
     </ScrollView>
     
+    <ProgressBar
+        android:id="@+id/progressBar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="@{viewModel.isLoading ? View.VISIBLE : View.GONE}"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
     <TextView
         android:id="@+id/textMonthlyHours"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Ore mensili: 0h 0m"
+        android:text="@{viewModel.monthlyHours}"
         android:textColor="@color/purple_500"
         android:textSize="18sp"
         android:textStyle="bold"
         android:gravity="center"
-        android:background="#F5F5F5"
+        android:background="@color/background_cream"
         android:padding="12dp"
         android:layout_marginTop="8dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</layout>

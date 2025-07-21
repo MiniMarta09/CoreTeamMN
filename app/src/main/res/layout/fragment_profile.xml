@@ -21,24 +21,6 @@
             android:padding="24dp"
             android:background="@color/background_cream">
 
-            <!-- Header con pulsante Esci -->
-            <RelativeLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="30dp">
-
-                <Button
-                    android:id="@+id/btn_logout"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_alignParentEnd="true"
-                    android:text="Esci"
-                    android:textColor="#FFFFFF"
-                    android:background="@drawable/rounded_button_blue"
-                    android:textSize="16sp"
-                    android:padding="12dp" />
-
-            </RelativeLayout>
 
             <TextView
                 android:id="@+id/textViewProfile"
@@ -56,21 +38,21 @@
                 android:id="@+id/textDescriptionprofile"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
                 android:text="Aggiorna e personalizza il tuo profilo"
                 android:textColor="@color/black"
                 android:textSize="16sp"
-                android:textStyle="bold"
-                app:layout_constraintTop_toBottomOf="@id/textViewProfile"
+                android:textStyle="italic"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintHorizontal_bias="0.498"
                 app:layout_constraintStart_toStartOf="parent"
-                android:layout_marginTop="8dp" />
+                app:layout_constraintTop_toBottomOf="@id/textViewProfile" />
 
             <!-- Nome -->
             <TextView
                 android:text="Nome e Cognome"
                 android:textSize="14sp"
-                android:textColor="#666666"
+                android:textColor="@color/purple_500"
                 android:layout_marginTop="25dp"
                 android:layout_marginBottom="5dp"
                 android:layout_width="wrap_content"
@@ -81,8 +63,9 @@
                 android:text="Non disponibile"
                 android:textSize="18sp"
                 android:textColor="#333333"
+                android:textStyle="bold"
                 android:padding="12dp"
-                android:background="#F0F0F0"
+                android:background="@color/background_cream"
                 android:layout_marginBottom="20dp"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content" />
@@ -91,7 +74,7 @@
             <TextView
                 android:text="Data di nascita"
                 android:textSize="14sp"
-                android:textColor="#666666"
+                android:textColor="@color/purple_500"
                 android:layout_marginBottom="5dp"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content" />
@@ -102,7 +85,7 @@
                 android:textSize="18sp"
                 android:textColor="#333333"
                 android:padding="12dp"
-                android:background="#F0F0F0"
+                android:background="@color/background_cream"
                 android:layout_marginBottom="20dp"
                 android:enabled="false"
                 android:layout_width="match_parent"
@@ -112,7 +95,7 @@
             <TextView
                 android:text="Email"
                 android:textSize="14sp"
-                android:textColor="#666666"
+                android:textColor="@color/purple_500"
                 android:layout_marginBottom="5dp"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content" />
@@ -123,7 +106,7 @@
                 android:textSize="18sp"
                 android:textColor="#333333"
                 android:padding="12dp"
-                android:background="#F0F0F0"
+                android:background="@color/background_cream"
                 android:layout_marginBottom="20dp"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content" />
@@ -132,7 +115,7 @@
             <TextView
                 android:text="Settore di Occupazione"
                 android:textSize="14sp"
-                android:textColor="#666666"
+                android:textColor="@color/purple_500"
                 android:layout_marginBottom="5dp"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content" />
@@ -142,7 +125,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:padding="12dp"
-                android:background="#F0F0F0"
+                android:background="@color/background_cream"
                 android:layout_marginBottom="20dp"
                 android:enabled="false" />
 
@@ -150,7 +133,7 @@
             <TextView
                 android:text="Password"
                 android:textSize="14sp"
-                android:textColor="#666666"
+                android:textColor="@color/purple_500"
                 android:layout_marginBottom="5dp"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content" />
@@ -161,7 +144,7 @@
                 android:textSize="18sp"
                 android:textColor="#333333"
                 android:padding="12dp"
-                android:background="#F0F0F0"
+                android:background="@color/background_cream"
                 android:layout_marginBottom="40dp"
                 android:inputType="textPassword"
                 android:enabled="false"

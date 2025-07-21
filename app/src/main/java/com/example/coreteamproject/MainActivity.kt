@@ -12,6 +12,9 @@ import android.os.Build
 import android.Manifest
 import android.content.Context
 import androidx.core.app.ActivityCompat
+import android.view.Menu
+import android.view.MenuItem
+import android.content.Intent
 
 class MainActivity : AppCompatActivity() {
 
@@ -21,6 +24,7 @@ class MainActivity : AppCompatActivity() {
 
         createNotificationChannel()
 
+        // Richiesta permesso notifiche (solo Android 13+)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             ActivityCompat.requestPermissions(
                 this,
@@ -30,7 +34,8 @@ class MainActivity : AppCompatActivity() {
         }
 
         val toolbar = findViewById<com.google.android.material.appbar.MaterialToolbar>(R.id.toolbar)
-        setSupportActionBar(toolbar)
+        setSupportActionBar(toolbar) // Imposta la Toolbar come ActionBar
+
         setupBottomNavigation()
 
         val user = FirebaseAuth.getInstance().currentUser
@@ -58,6 +63,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    // Imposta i colori personalizzati per le icone e il testo del BottomNavigationView
     private fun setupBottomNavigation() {
         val bottomNavigation = findViewById<BottomNavigationView>(R.id.bottom_navigation)
 
@@ -80,6 +86,7 @@ class MainActivity : AppCompatActivity() {
         bottomNavigation.itemTextColor = ColorStateList(states, textColors)
     }
 
+    // Crea un canale per le notifiche (richiesto da Android 8+)
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
@@ -92,6 +99,29 @@ class MainActivity : AppCompatActivity() {
 
             val notificationManager = getSystemService(NotificationManager::class.java)
             notificationManager.createNotificationChannel(channel)
+        }
+    }
+
+    // Aggiunge il menu "Esci" nella Toolbar
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.toolbar_menu, menu)
+        return true
+    }
+
+    // Gestisce il click sul menu "Esci"
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.action_logout -> {
+                // Logout da Firebase
+                FirebaseAuth.getInstance().signOut()
+
+                // Torna alla schermata di benvenuto
+                val intent = Intent(this, WelcomeActivity::class.java)
+                intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                startActivity(intent)
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
         }
     }
 }

@@ -20,7 +20,7 @@ class EventFragment : Fragment() {
     private lateinit var binding: FragmentEventBinding
     private lateinit var viewModel: EventViewModel
 
-    Metodo chiamato alla creazione del fragment
+    //Metodo chiamato alla creazione del fragment
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?

@@ -14,6 +14,12 @@
         <action
             android:id="@+id/action_homeFragment_to_eventFragment"
             app:destination="@id/eventFragment" />
+        <action
+            android:id="@+id/action_homeFragment_to_shiftFragment"
+            app:destination="@id/shiftFragment" />
+        <action
+            android:id="@+id/action_homeFragment_to_teamFragment"
+            app:destination="@id/teamFragment" />
     </fragment>
 
     <fragment
@@ -29,5 +35,13 @@
         android:id="@+id/eventFragment"
         android:name="com.example.coreteamproject.EventFragment"
         android:label="EventFragment" />
+    <fragment
+        android:id="@+id/shiftFragment"
+        android:name="com.example.coreteamproject.ShiftFragment"
+        android:label="ShiftFragment" />
+    <fragment
+        android:id="@+id/teamFragment"
+        android:name="com.example.coreteamproject.TeamFragment"
+        android:label="TeamFragment" />
 
 </navigation>

@@ -1,94 +1,137 @@
 package com.example.coreteamproject
 
 import android.app.AlertDialog
-import android.app.TimePickerDialog
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
-import android.widget.AdapterView
+import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.ViewModelProvider
+import com.example.coreteamproject.databinding.FragmentShiftBinding
 import com.google.firebase.firestore.FirebaseFirestore
 import java.text.SimpleDateFormat
 import java.util.*
 
 class ShiftFragment : Fragment() {
 
-    private lateinit var calendarView: CalendarView
-    private lateinit var btnAddShift: Button
-    private lateinit var shiftsLayout: LinearLayout
-    private lateinit var textSelectedDate: TextView
-    private lateinit var textMonthlyHours: TextView
-
-    private val db = FirebaseFirestore.getInstance()
+    private lateinit var binding: FragmentShiftBinding
+    private lateinit var viewModel: ShiftViewModel
+    private val dbDateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
     private var selectedDate = ""
-    private var currentMonth = ""
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
-        val view = inflater.inflate(R.layout.fragment_shift, container, false)
-
-        calendarView = view.findViewById(R.id.calendarView)
-        btnAddShift = view.findViewById(R.id.btnAddShift)
-        shiftsLayout = view.findViewById(R.id.shiftsLayout)
-        textSelectedDate = view.findViewById(R.id.textSelectedDate)
-        textMonthlyHours = view.findViewById(R.id.textMonthlyHours)
-
-        // Data di oggi
-        val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
-        selectedDate = today
-        textSelectedDate.text = "Turni per: $today"
+    ): View {
+        // Inizializza data binding
+        binding = DataBindingUtil.inflate(inflater, R.layout.fragment_shift, container, false)
         
-        // Inizializziamo il mese corrente (formato yyyy-MM)
-        currentMonth = today.substring(0, 7)
-
-        // Calendario
-        calendarView.setOnDateChangeListener { _, year, month, dayOfMonth ->
+        // Inizializza ViewModel
+        viewModel = ViewModelProvider(this)[ShiftViewModel::class.java]
+        binding.viewModel = viewModel
+        binding.lifecycleOwner = this
+        
+        // Data di oggi
+        val today = dbDateFormat.format(Date())
+        selectedDate = today
+        
+        // Setup calendario
+        setupCalendar()
+        
+        // Setup bottone aggiungi
+        setupAddButton()
+        
+        // Setup observers
+        setupObservers()
+        
+        // Inizializza con data corrente
+        viewModel.updateSelectedDate(today)
+        
+        return binding.root
+    }
+    
+    private fun setupCalendar() {
+        binding.calendarView.setOnDateChangeListener { _, year, month, dayOfMonth ->
             val calendar = Calendar.getInstance()
             calendar.set(year, month, dayOfMonth)
-            val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-            selectedDate = dateFormat.format(calendar.time)
-
-            val displayFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
-            textSelectedDate.text = "Turni per: ${displayFormat.format(calendar.time)}"
-
-            // Verifichiamo se è cambiato il mese per aggiornare il calcolo delle ore mensili
-            val newMonth = selectedDate.substring(0, 7)
-            if (newMonth != currentMonth) {
-                currentMonth = newMonth
-            }
-            
-            loadShifts(selectedDate)
+            selectedDate = dbDateFormat.format(calendar.time)
+            viewModel.updateSelectedDate(selectedDate)
         }
-
-        // Bottone aggiungi
-        btnAddShift.setOnClickListener {
-            // Verifica se la data selezionata è oggi o nel passato
-            val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
-            val selectedDateObj = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(selectedDate)
-            val todayObj = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(today)
-            
-            if (selectedDateObj != null && todayObj != null && selectedDateObj.after(todayObj)) {
-                // La data selezionata è nel futuro
-                Toast.makeText(requireContext(), "Non puoi inserire turni per date future", Toast.LENGTH_LONG).show()
-            } else {
-                // La data è oggi o nel passato, permetti l'inserimento
-                showAddDialog()
+    }
+    
+    private fun setupAddButton() {
+        binding.btnAddShift.setOnClickListener {
+            viewModel.canAddShift.value?.let { canAdd ->
+                if (canAdd) {
+                    showAddDialog()
+                } else {
+                    Toast.makeText(requireContext(), "Non puoi inserire turni per date future", Toast.LENGTH_LONG).show()
+                }
             }
         }
-
-        // Carica turni di oggi
-        loadShifts(today)
-
-        return view
+    }
+    
+    private fun setupObservers() {
+        // Observer per i turni
+        viewModel.turni.observe(viewLifecycleOwner) { turni ->
+            updateShiftsUI(turni)
+        }
+        
+        // Observer per errori
+        viewModel.error.observe(viewLifecycleOwner) { error ->
+            error?.let {
+                Toast.makeText(requireContext(), it, Toast.LENGTH_SHORT).show()
+                viewModel.clearError()
+            }
+        }
+        
+        // Observer per successo salvataggio
+        viewModel.saveSuccess.observe(viewLifecycleOwner) { success ->
+            if (success) {
+                Toast.makeText(requireContext(), "Turno salvato!", Toast.LENGTH_SHORT).show()
+                viewModel.clearSaveSuccess()
+            }
+        }
+        
+        // Observer per successo eliminazione
+        viewModel.deleteSuccess.observe(viewLifecycleOwner) { success ->
+            if (success) {
+                Toast.makeText(requireContext(), "Turno eliminato!", Toast.LENGTH_SHORT).show()
+                viewModel.clearDeleteSuccess()
+            }
+        }
+        
+        // Observer per stato vuoto
+        viewModel.isEmpty.observe(viewLifecycleOwner) { isEmpty ->
+            if (isEmpty) {
+                showEmptyState()
+            }
+        }
+    }
+    
+    private fun updateShiftsUI(turni: List<Turno>) {
+        binding.shiftsLayout.removeAllViews()
+        
+        for (turno in turni) {
+            val shiftView = createShiftView(turno)
+            binding.shiftsLayout.addView(shiftView)
+        }
+    }
+    
+    private fun showEmptyState() {
+        binding.shiftsLayout.removeAllViews()
+        val textView = TextView(requireContext())
+        textView.text = "Nessun turno per questa data"
+        textView.textSize = 16f
+        textView.setPadding(20, 20, 20, 20)
+        binding.shiftsLayout.addView(textView)
     }
 
     private fun showAddDialog() {
         // Generiamo la lista di orari ogni 15 minuti
-        val timeList = generateTimeList()
+        val timeList = viewModel.generateTimeList()
         var selectedStartTime = "08:00" // Valore predefinito per inizio
         var selectedEndTime = "17:00" // Valore predefinito per fine
         
@@ -188,214 +231,15 @@ class ShiftFragment : Fragment() {
                 val timeRange = "$selectedStartTime - $selectedEndTime"
                 val title = "Turno $selectedDate"
                 
-                saveShift(title, timeRange, "")
+                viewModel.saveShift(title, timeRange, "")
             }
             .setNegativeButton("Annulla", null)
             .show()
     }
     
-    // Genera una lista di orari ogni 15 minuti (00:00, 00:15, 00:30, ecc.)
-    private fun generateTimeList(): List<String> {
-        val timeList = mutableListOf<String>()
-        
-        for (hour in 0..23) {
-            for (minute in listOf(0, 15, 30, 45)) {
-                val formattedHour = hour.toString().padStart(2, '0')
-                val formattedMinute = minute.toString().padStart(2, '0')
-                timeList.add("$formattedHour:$formattedMinute")
-            }
-        }
-        
-        return timeList
-    }
-    
-    // Formatta l'orario in formato leggibile (HH:mm)
-    private fun formatTime(calendar: Calendar): String {
-        val hour = calendar.get(Calendar.HOUR_OF_DAY).toString().padStart(2, '0')
-        val minute = calendar.get(Calendar.MINUTE).toString().padStart(2, '0')
-        return "$hour:$minute"
-    }
 
-    private fun saveShift(title: String, time: String, description: String) {
-        val currentUser = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
-        if (currentUser == null) {
-            Toast.makeText(context, "Errore: utente non autenticato", Toast.LENGTH_SHORT).show()
-            return
-        }
-        
-        val shift = hashMapOf(
-            "title" to title,
-            "time" to time,
-            "description" to description,
-            "date" to selectedDate,
-            "userId" to currentUser.uid
-        )
 
-        db.collection("shifts")
-            .add(shift)
-            .addOnSuccessListener {
-                Toast.makeText(context, "Turno salvato!", Toast.LENGTH_SHORT).show()
-                loadShifts(selectedDate)
-                loadMonthlyHours()
-            }
-            .addOnFailureListener {
-                Toast.makeText(context, "Errore salvataggio turno", Toast.LENGTH_SHORT).show()
-            }
-    }
-
-    private fun loadShifts(date: String) {
-        shiftsLayout.removeAllViews()
-        
-        val currentUser = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
-        if (currentUser == null) {
-            val textView = TextView(requireContext())
-            textView.text = "Errore: utente non autenticato"
-            textView.textSize = 16f
-            textView.setPadding(20, 20, 20, 20)
-            shiftsLayout.addView(textView)
-            return
-        }
-
-        db.collection("shifts")
-            .whereEqualTo("date", date)
-            .whereEqualTo("userId", currentUser.uid)
-            .get()
-            .addOnSuccessListener { documents ->
-                if (documents.isEmpty) {
-                    val textView = TextView(requireContext())
-                    textView.text = "Nessun turno per questa data"
-                    textView.textSize = 16f
-                    textView.setPadding(20, 20, 20, 20)
-                    shiftsLayout.addView(textView)
-                } else {
-                    for (document in documents) {
-                        val shift = document.data
-                        val shiftView = createShiftView(document.id, shift)
-                        shiftsLayout.addView(shiftView)
-                    }
-                }
-                
-                // Aggiorniamo il calcolo del monte ore mensile
-                loadMonthlyHours()
-            }
-            .addOnFailureListener {
-                Toast.makeText(requireContext(), "Errore nel caricamento dei turni", Toast.LENGTH_SHORT).show()
-            }
-    }
-    
-    private fun loadMonthlyHours() {
-        try {
-            // Otteniamo il mese dalla data selezionata (yyyy-MM)
-            val selectedMonth = selectedDate.substring(0, 7)
-            currentMonth = selectedMonth
-            
-            // Costruiamo le date di inizio e fine mese correttamente
-            val startOfMonth = "$selectedMonth-01"
-            val endOfMonth = "$selectedMonth-31"
-            
-            val currentUser = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
-            if (currentUser == null) {
-                textMonthlyHours.text = "Ore $selectedMonth: Errore utente"
-                return
-            }
-            
-            // Approccio semplificato: carichiamo tutti i turni del mese e filtriamo
-            db.collection("shifts")
-                .whereGreaterThanOrEqualTo("date", startOfMonth)
-                .whereLessThanOrEqualTo("date", endOfMonth)
-                .get()
-                .addOnSuccessListener { documents ->
-                    var totalMinutes = 0
-                    
-                    for (document in documents) {
-                        try {
-                            val shift = document.data
-                            val shiftUserId = shift["userId"] as? String
-                            
-                            // Include il turno SOLO se ha userId e corrisponde all'utente corrente
-                            if (shiftUserId == currentUser.uid) {
-                                val timeRange = shift["time"] as? String
-                                if (timeRange != null && timeRange.isNotEmpty()) {
-                                    val shiftMinutes = calculateMinutesFromTimeRange(timeRange)
-                                    if (shiftMinutes > 0) {
-                                        totalMinutes += shiftMinutes
-                                    }
-                                }
-                            }
-                        } catch (e: Exception) {
-                            // Ignora turni con dati malformati
-                            continue
-                        }
-                    }
-                    
-                    // Aggiorniamo il display
-                    updateMonthlyHoursDisplay(totalMinutes, selectedMonth)
-                }
-                .addOnFailureListener { exception ->
-                    textMonthlyHours.text = "Ore $selectedMonth: Errore caricamento"
-                }
-        } catch (e: Exception) {
-            textMonthlyHours.text = "Ore: Errore calcolo"
-        }
-    }
-    
-    private fun updateMonthlyHoursDisplay(totalMinutes: Int, selectedMonth: String) {
-        // Convertiamo i minuti totali in ore e minuti
-        val hours = totalMinutes / 60
-        val minutes = totalMinutes % 60
-        
-        // Aggiorniamo la TextView
-        val monthName = getMonthName(selectedMonth.substring(5, 7).toInt() - 1)
-        textMonthlyHours.text = "Ore $monthName: ${hours}h ${minutes}m"
-    }
-    
-    private fun calculateMinutesFromTimeRange(timeRange: String): Int {
-        try {
-            // Formato atteso: "HH:MM - HH:MM"
-            val parts = timeRange.split(" - ")
-            if (parts.size != 2) return 0
-            
-            val startTime = parts[0] // HH:MM
-            val endTime = parts[1]   // HH:MM
-            
-            val startHour = startTime.split(":")[0].toInt()
-            val startMinute = startTime.split(":")[1].toInt()
-            val endHour = endTime.split(":")[0].toInt()
-            val endMinute = endTime.split(":")[1].toInt()
-            
-            val startTotalMinutes = startHour * 60 + startMinute
-            val endTotalMinutes = endHour * 60 + endMinute
-            
-            // Gestiamo anche il caso in cui l'orario di fine sia il giorno dopo
-            return if (endTotalMinutes > startTotalMinutes) {
-                endTotalMinutes - startTotalMinutes
-            } else {
-                (24 * 60 - startTotalMinutes) + endTotalMinutes // Assume turno notturno
-            }
-        } catch (e: Exception) {
-            return 0
-        }
-    }
-    
-    private fun getMonthName(month: Int): String {
-        return when (month) {
-            0 -> "Gennaio"
-            1 -> "Febbraio"
-            2 -> "Marzo"
-            3 -> "Aprile"
-            4 -> "Maggio"
-            5 -> "Giugno"
-            6 -> "Luglio"
-            7 -> "Agosto"
-            8 -> "Settembre"
-            9 -> "Ottobre"
-            10 -> "Novembre"
-            11 -> "Dicembre"
-            else -> ""
-        }
-    }
-
-    private fun createShiftView(shiftId: String, shift: MutableMap<String, Any>): View {
+    private fun createShiftView(turno: Turno): View {
         val shiftLayout = LinearLayout(requireContext())
         shiftLayout.orientation = LinearLayout.VERTICAL
         shiftLayout.setPadding(32, 32, 32, 32)
@@ -408,10 +252,10 @@ class ShiftFragment : Fragment() {
         layoutParams.setMargins(0, 16, 0, 16)
         shiftLayout.layoutParams = layoutParams
 
-        // Estrai i dati dalla mappa
-        val title = shift["title"] as? String ?: ""
-        val time = shift["time"] as? String ?: ""
-        val description = shift["description"] as? String ?: ""
+        // Estrai i dati dal turno
+        val title = turno.title
+        val time = turno.time
+        val description = turno.description
         
         // Titolo
         val titleText = TextView(requireContext())
@@ -441,27 +285,12 @@ class ShiftFragment : Fragment() {
                 .setTitle("Elimina Turno")
                 .setMessage("Vuoi eliminare '$title'?")
                 .setPositiveButton("Elimina") { _, _ ->
-                    deleteShift(shiftId)
+                    viewModel.deleteShift(turno.id)
                 }
                 .setNegativeButton("Annulla", null)
                 .show()
         }
 
         return shiftLayout
-    }
-
-    private fun deleteShift(shiftId: String) {
-        db.collection("shifts")
-            .document(shiftId)
-            .delete()
-            .addOnSuccessListener {
-                Toast.makeText(context, "Turno eliminato!", Toast.LENGTH_SHORT).show()
-                loadShifts(selectedDate)
-                // Aggiorniamo il calcolo delle ore mensili
-                loadMonthlyHours()
-            }
-            .addOnFailureListener {
-                Toast.makeText(context, "Errore eliminazione", Toast.LENGTH_SHORT).show()
-            }
     }
 }

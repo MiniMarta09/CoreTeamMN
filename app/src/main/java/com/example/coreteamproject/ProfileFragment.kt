@@ -126,17 +126,6 @@ class ProfileFragment : Fragment() {
             salvaDatiProfilo()
         }
 
-        // Pulsante Esci
-        binding.btnLogout.setOnClickListener {
-            AuthUI.getInstance()
-                .signOut(requireContext())
-                .addOnCompleteListener {
-                    val intent = Intent(requireContext(), WelcomeActivity::class.java)
-                    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                    startActivity(intent)
-                    requireActivity().finish()
-                }
-        }
     }
 
     private fun aggiornaCampiProfilo(dipendente: Dipendente) {
