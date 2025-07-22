@@ -6,6 +6,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
+import androidx.cardview.widget.CardView
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
@@ -155,19 +156,36 @@ class DiaryFragment : Fragment() {
 
    //Aggiunta valutazione alla lista
     private fun aggiungiValutazioneAllaLista(valutazione: ValutazioneMensile) {
-        // Crea il container principale
+        // Creiamo il FrameLayout esterno che farà da bordo nero (identico al team)
+        val frameLayout = FrameLayout(requireContext()).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                setMargins(0, 0, 0, 24) // margine sotto
+            }
+            // Impostiamo il background del FrameLayout come nero
+            setBackgroundColor(resources.getColor(android.R.color.black, null))
+        }
+        
+        // Creiamo la CardView interna che ospiterà i contenuti
+        val cardView = CardView(requireContext()).apply {
+            layoutParams = FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                // Impostiamo un margine uniforme di 3dp per un bordo ancora più visibile
+                setMargins(3, 3, 3, 3)
+            }
+            radius = 12f
+            cardElevation = 6f
+            setCardBackgroundColor(resources.getColor(android.R.color.white, null))
+        }
+        
+        // Crea il container principale all'interno della CardView
         val containerLayout = LinearLayout(requireContext())
         containerLayout.orientation = LinearLayout.VERTICAL
         containerLayout.setPadding(16, 16, 16, 16)
-        containerLayout.setBackgroundColor(0xFFF5F5F5.toInt()) // grigio chiaro
-
-     //Margini e dimensioni
-       val layoutParams = LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT,
-            LinearLayout.LayoutParams.WRAP_CONTENT
-        )
-        layoutParams.setMargins(0, 0, 0, 16) // margine sotto
-        containerLayout.layoutParams = layoutParams
 
         // Titolo con mese/anno
         val textMeseAnno = TextView(requireContext())
@@ -208,6 +226,13 @@ class DiaryFragment : Fragment() {
             containerLayout.addView(textCommento)
         }
 
-        binding.recyclerValutazioni.addView(containerLayout)
+        // Aggiungi il container alla CardView
+        cardView.addView(containerLayout)
+        
+        // Aggiungi la CardView al FrameLayout per creare l'effetto bordo
+        frameLayout.addView(cardView)
+        
+        // Aggiungi il FrameLayout con la card al recyclerValutazioni
+        binding.recyclerValutazioni.addView(frameLayout)
     }
 }

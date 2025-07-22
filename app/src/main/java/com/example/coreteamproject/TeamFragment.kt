@@ -5,6 +5,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
@@ -104,13 +105,27 @@ class TeamFragment : Fragment() {
         binding.teamMembersLayout.addView(textViewEmpty)
     }
 
-    private fun creaDipendenteCard(dipendente: Dipendente): CardView {
-        val cardView = CardView(requireContext()).apply {
+    private fun creaDipendenteCard(dipendente: Dipendente): FrameLayout {
+        // Creiamo il FrameLayout esterno che farà da bordo nero
+        val frameLayout = FrameLayout(requireContext()).apply {
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
             ).apply {
                 setMargins(0, 0, 0, 24)
+            }
+            // Impostiamo il background del FrameLayout come nero
+            setBackgroundColor(resources.getColor(android.R.color.black, null))
+        }
+
+        // Creiamo la CardView interna che ospiterà i contenuti
+        val cardView = CardView(requireContext()).apply {
+            layoutParams = FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                // Impostiamo un margine uniforme di 3dp per un bordo ancora più visibile
+                setMargins(3, 3, 3, 3)
             }
             radius = 12f
             cardElevation = 6f
@@ -180,7 +195,10 @@ class TeamFragment : Fragment() {
 
         // Aggiungi il LinearLayout al CardView
         cardView.addView(linearLayout)
+        
+        // Aggiungi la CardView al FrameLayout per creare l'effetto bordo
+        frameLayout.addView(cardView)
 
-        return cardView
+        return frameLayout
     }
 }
