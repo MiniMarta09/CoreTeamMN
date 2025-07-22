@@ -46,14 +46,16 @@ class WelcomeActivity : AppCompatActivity() {
 
     private fun startAuthentication() {
         val providers = arrayListOf(
-            AuthUI.IdpConfig.EmailBuilder().build()
+            AuthUI.IdpConfig.EmailBuilder().build(),
+            AuthUI.IdpConfig.GoogleBuilder().build()
         )
 
-        // Crea e lancia l'intento di login con configurazioni migliorate
         val signInIntent = AuthUI.getInstance()
             .createSignInIntentBuilder()
             .setAvailableProviders(providers)
             .setTheme(R.style.Theme_CoreTeamProject)
+            .setLogo(R.drawable.logonosfondo)
+            .setAlwaysShowSignInMethodScreen(true)
             .build()
 
         signInLauncher.launch(signInIntent)
