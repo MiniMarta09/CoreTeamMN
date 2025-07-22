@@ -82,19 +82,18 @@ class EventViewModel : ViewModel() {
         _isEmpty.value = false
         _saveSuccess.value = true
         
-        // Prepara i dati per Firestore usando la collezione shifts
+        // Prepara i dati per Firestore usando la collezione events
         val eventoMap = hashMapOf(
             "title" to title,
             "time" to time,
             "description" to description,
             "date" to currentDate,
             "userId" to (auth.currentUser?.uid ?: "utente_sconosciuto"),
-            "timestamp" to Calendar.getInstance().timeInMillis,
-            "isEvent" to true  // Campo identificativo per distinguere dagli shift normali
+            "timestamp" to Calendar.getInstance().timeInMillis
         )
         
-        // Salva nella collezione shifts
-        db.collection("shifts")
+        // Salva nella collezione events
+        db.collection("events")
             .add(eventoMap)
             .addOnSuccessListener { documentReference ->
                 // Aggiorna l'ID con quello reale di Firestore
@@ -123,8 +122,8 @@ class EventViewModel : ViewModel() {
             _isEmpty.value = currentEvents.isEmpty()
             _deleteSuccess.value = true
             
-            // Elimina dalla collezione shifts
-            db.collection("shifts")
+            // Rimuovi da Firestore
+            db.collection("events")
                 .document(eventoId)
                 .delete()
                 .addOnSuccessListener {
@@ -165,10 +164,9 @@ class EventViewModel : ViewModel() {
                 return
             }
             
-            // Query sulla collezione shifts filtrando solo per eventi e data (visibili a tutti)
-            db.collection("shifts")
+            // Query sulla collezione events filtrando per data (visibili a tutti)
+            db.collection("events")
                 .whereEqualTo("date", currentDate)
-                .whereEqualTo("isEvent", true)  // Filtra solo gli eventi, senza filtro userId
                 .get()
                 .addOnSuccessListener { querySnapshot ->
                     val eventiList = mutableListOf<Evento>()
