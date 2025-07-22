@@ -1,5 +1,7 @@
 package com.example.coreteamproject
 
+import android.graphics.Typeface
+import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -10,6 +12,7 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.cardview.widget.CardView
+import androidx.core.content.ContextCompat
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
@@ -85,12 +88,23 @@ class TeamFragment : Fragment() {
         }
 
         Log.d("TeamFragment", "Mostrando ${dipendenti.size} dipendenti:")
-        
+
         // Crea una card per ogni dipendente
-        for (dipendente in dipendenti) {
+        for ((index, dipendente) in dipendenti.withIndex()) {
             Log.d("TeamFragment", "Dipendente: ${dipendente.namelastname}, Email: '${dipendente.email}'")
             val cardView = creaDipendenteCard(dipendente)
             binding.teamMembersLayout.addView(cardView)
+
+            // Spazio tra le card
+            if (index < dipendenti.size - 1) {
+                val space = android.widget.Space(requireContext()).apply {
+                    layoutParams = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        24 //
+                    )
+                }
+                binding.teamMembersLayout.addView(space)
+            }
         }
     }
 
@@ -114,8 +128,15 @@ class TeamFragment : Fragment() {
             ).apply {
                 setMargins(0, 0, 0, 24)
             }
-            // Impostiamo il background del FrameLayout come nero
-            setBackgroundColor(resources.getColor(android.R.color.black, null))
+
+            // Impostiamo il background del FrameLayout come nero con bordi arrotondati
+            background = GradientDrawable().apply {
+                setColor(resources.getColor(android.R.color.black, null)) // Colore nero
+                cornerRadius = 18f // Bordi arrotondati
+            }
+
+            // Aggiungiamo padding interno ridotto per bordo meno spesso
+            setPadding(2, 2, 2, 2)
         }
 
         // Creiamo la CardView interna che ospiterà i contenuti
@@ -124,12 +145,11 @@ class TeamFragment : Fragment() {
                 FrameLayout.LayoutParams.MATCH_PARENT,
                 FrameLayout.LayoutParams.WRAP_CONTENT
             ).apply {
-                // Impostiamo un margine uniforme di 3dp per un bordo ancora più visibile
                 setMargins(3, 3, 3, 3)
             }
             radius = 12f
             cardElevation = 6f
-            setCardBackgroundColor(resources.getColor(android.R.color.white, null))
+            setCardBackgroundColor(ContextCompat.getColor(context, R.color.white))
         }
 
         val linearLayout = LinearLayout(requireContext()).apply {
@@ -147,8 +167,8 @@ class TeamFragment : Fragment() {
             }
             text = if (dipendente.namelastname.isNotEmpty()) dipendente.namelastname else "Nome non disponibile"
             textSize = 18f
-            setTextColor(resources.getColor(R.color.purple_500, null))
-            setTypeface(null, android.graphics.Typeface.BOLD)
+            setTextColor(ContextCompat.getColor(context, R.color.purple_500))
+            setTypeface(null, Typeface.BOLD)
         }
 
         // TextView per il settore
@@ -161,7 +181,8 @@ class TeamFragment : Fragment() {
             }
             text = "Settore: ${dipendente.settoreOccupazione}"
             textSize = 14f
-            setTextColor(resources.getColor(android.R.color.darker_gray, null))
+            setTextColor(ContextCompat.getColor(context, android.R.color.black))
+            setTypeface(null, Typeface.BOLD)
         }
 
         val textEmail = TextView(requireContext()).apply {
@@ -173,7 +194,8 @@ class TeamFragment : Fragment() {
             }
             text = "Email: ${dipendente.email}"
             textSize = 14f
-            setTextColor(resources.getColor(android.R.color.darker_gray, null))
+            setTextColor(ContextCompat.getColor(context, android.R.color.black))
+            setTypeface(null, Typeface.BOLD)
         }
 
         // TextView per la data di nascita
@@ -184,7 +206,8 @@ class TeamFragment : Fragment() {
             )
             text = "Data di nascita: ${dipendente.dataNascita}"
             textSize = 14f
-            setTextColor(resources.getColor(android.R.color.darker_gray, null))
+            setTextColor(ContextCompat.getColor(context, android.R.color.black))
+            setTypeface(null, Typeface.BOLD)
         }
 
         // Aggiungi tutti i TextView al LinearLayout
@@ -195,7 +218,7 @@ class TeamFragment : Fragment() {
 
         // Aggiungi il LinearLayout al CardView
         cardView.addView(linearLayout)
-        
+
         // Aggiungi la CardView al FrameLayout per creare l'effetto bordo
         frameLayout.addView(cardView)
 

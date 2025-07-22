@@ -1,12 +1,14 @@
 package com.example.coreteamproject
 
+import android.graphics.Typeface
+import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
 import androidx.cardview.widget.CardView
+import androidx.core.content.ContextCompat
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
@@ -20,7 +22,7 @@ class DiaryFragment : Fragment() {
     private lateinit var binding: FragmentDiaryBinding
     private lateinit var viewModel: DiaryViewModel
 
-   //Metodo chiamato alla creazione del fragment
+    //Metodo chiamato alla creazione del fragment
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -107,7 +109,6 @@ class DiaryFragment : Fragment() {
             }
 
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
-
             override fun onStopTrackingTouch(seekBar: SeekBar?) {}
         })
 
@@ -119,11 +120,10 @@ class DiaryFragment : Fragment() {
             }
 
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
-
             override fun onStopTrackingTouch(seekBar: SeekBar?) {}
         })
 
-       //Listener per i SeekBarSoddisfazione
+        //Listener per i SeekBarSoddisfazione
         binding.seekbarSoddisfazione.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 binding.textSoddisfazioneValue.text = "${progress + 1}"
@@ -131,7 +131,6 @@ class DiaryFragment : Fragment() {
             }
 
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
-
             override fun onStopTrackingTouch(seekBar: SeekBar?) {}
         })
     }
@@ -140,11 +139,23 @@ class DiaryFragment : Fragment() {
     private fun aggiornaListaValutazioni(valutazioni: List<ValutazioneMensile>) {
         binding.recyclerValutazioni.removeAllViews()
 
-        for (valutazione in valutazioni) {
+        for ((index, valutazione) in valutazioni.withIndex()) {
             aggiungiValutazioneAllaLista(valutazione)
+
+            // Aggiungi spazio tra le card (tranne dopo l'ultima)
+            if (index < valutazioni.size - 1) {
+                val space = Space(requireContext()).apply {
+                    layoutParams = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        24 // Spazio visivo tra una valutazione e l'altra
+                    )
+                }
+                binding.recyclerValutazioni.addView(space)
+            }
         }
     }
 
+    //Mostra messaggio se non ci sono valutazioni
     private fun mostraMessaggioVuoto() {
         binding.recyclerValutazioni.removeAllViews()
         val textNoData = TextView(requireContext())
@@ -154,85 +165,104 @@ class DiaryFragment : Fragment() {
         binding.recyclerValutazioni.addView(textNoData)
     }
 
-   //Aggiunta valutazione alla lista
+    //Aggiunta valutazione alla lista
     private fun aggiungiValutazioneAllaLista(valutazione: ValutazioneMensile) {
-        // Creiamo il FrameLayout esterno che farà da bordo nero (identico al team)
+        // Creiamo il FrameLayout esterno che farà da bordo nero
         val frameLayout = FrameLayout(requireContext()).apply {
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
             ).apply {
-                setMargins(0, 0, 0, 24) // margine sotto
+                setMargins(3, 3, 3, 3)
             }
-            // Impostiamo il background del FrameLayout come nero
-            setBackgroundColor(resources.getColor(android.R.color.black, null))
+
+            background = GradientDrawable().apply {
+                setColor(resources.getColor(android.R.color.black, null))
+                cornerRadius = 18f
+            }
+
+            setPadding(2, 2, 2, 2)
         }
-        
+
         // Creiamo la CardView interna che ospiterà i contenuti
         val cardView = CardView(requireContext()).apply {
             layoutParams = FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT,
                 FrameLayout.LayoutParams.WRAP_CONTENT
             ).apply {
-                // Impostiamo un margine uniforme di 3dp per un bordo ancora più visibile
                 setMargins(3, 3, 3, 3)
             }
             radius = 12f
             cardElevation = 6f
-            setCardBackgroundColor(resources.getColor(android.R.color.white, null))
+            setCardBackgroundColor(ContextCompat.getColor(context, R.color.white))
         }
-        
+
         // Crea il container principale all'interno della CardView
-        val containerLayout = LinearLayout(requireContext())
-        containerLayout.orientation = LinearLayout.VERTICAL
-        containerLayout.setPadding(16, 16, 16, 16)
+        val containerLayout = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(32, 24, 32, 24)
+        }
 
         // Titolo con mese/anno
-        val textMeseAnno = TextView(requireContext())
-        textMeseAnno.text = "Mese: ${valutazione.meseAnno}"
-        textMeseAnno.textSize = 18f
-        textMeseAnno.setTypeface(null, android.graphics.Typeface.BOLD)
-        textMeseAnno.setTextColor(resources.getColor(R.color.purple_500, null))
-        textMeseAnno.setPadding(0, 0, 0, 16)
-        containerLayout.addView(textMeseAnno)
+        val textMeseAnno = TextView(requireContext()).apply {
+            text = "Mese: ${valutazione.meseAnno}"
+            textSize = 18f
+            setTypeface(null, Typeface.BOLD)
+            setTextColor(ContextCompat.getColor(context, R.color.purple_500))
+            setPadding(0, 0, 0, 16)
+        }
 
         // Stress
-        val textStress = TextView(requireContext())
-        textStress.text = "Stress: ${valutazione.stress}/5"
-        textStress.textSize = 14f
-        textStress.setPadding(0, 0, 0, 8)
-        containerLayout.addView(textStress)
+        val textStress = TextView(requireContext()).apply {
+            text = "Stress: ${valutazione.stress}/5"
+            textSize = 14f
+            setTypeface(null, Typeface.BOLD)
+            setTextColor(ContextCompat.getColor(context, android.R.color.black))
+            setPadding(0, 0, 0, 8)
+        }
 
         // Colleghi
-        val textColleghi = TextView(requireContext())
-        textColleghi.text = "Colleghi: ${valutazione.rapportoColleghi}/5"
-        textColleghi.textSize = 14f
-        textColleghi.setPadding(0, 0, 0, 8)
-        containerLayout.addView(textColleghi)
+        val textColleghi = TextView(requireContext()).apply {
+            text = "Colleghi: ${valutazione.rapportoColleghi}/5"
+            textSize = 14f
+            setTypeface(null, Typeface.BOLD)
+            setTextColor(ContextCompat.getColor(context, android.R.color.black))
+            setPadding(0, 0, 0, 8)
+        }
 
         // Soddisfazione
-        val textSoddisfazione = TextView(requireContext())
-        textSoddisfazione.text = "Soddisfazione: ${valutazione.soddisfazioneLavoro}/5"
-        textSoddisfazione.textSize = 14f
-        textSoddisfazione.setPadding(0, 0, 0, 8)
-        containerLayout.addView(textSoddisfazione)
+        val textSoddisfazione = TextView(requireContext()).apply {
+            text = "Soddisfazione: ${valutazione.soddisfazioneLavoro}/5"
+            textSize = 14f
+            setTypeface(null, Typeface.BOLD)
+            setTextColor(ContextCompat.getColor(context, android.R.color.black))
+            setPadding(0, 0, 0, 8)
+        }
 
         // Commento
         if (valutazione.commento.isNotEmpty()) {
-            val textCommento = TextView(requireContext())
-            textCommento.text = "Commento: ${valutazione.commento}"
-            textCommento.textSize = 14f
-            textCommento.setTypeface(null, android.graphics.Typeface.ITALIC)
+            val textCommento = TextView(requireContext()).apply {
+                text = "Commento: ${valutazione.commento}"
+                textSize = 14f
+                setTypeface(null, Typeface.ITALIC)
+                setTextColor(ContextCompat.getColor(context, android.R.color.black))
+            }
             containerLayout.addView(textCommento)
         }
 
+        // Aggiungi tutti i TextView al container
+        containerLayout.addView(textMeseAnno)
+        containerLayout.addView(textStress)
+        containerLayout.addView(textColleghi)
+        containerLayout.addView(textSoddisfazione)
+
         // Aggiungi il container alla CardView
         cardView.addView(containerLayout)
-        
-        // Aggiungi la CardView al FrameLayout per creare l'effetto bordo
+
+        // Aggiungi la CardView al FrameLayout
         frameLayout.addView(cardView)
-        
-        // Aggiungi il FrameLayout con la card al recyclerValutazioni
+
+        // Aggiungi il FrameLayout alla vista
         binding.recyclerValutazioni.addView(frameLayout)
     }
 }

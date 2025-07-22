@@ -7,48 +7,47 @@
     android:background="@color/background_cream"
     tools:context=".MainActivity">
 
-    <!-- Titolo -->
     <TextView
         android:id="@+id/textViewHome"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="65dp"
+        android:layout_marginTop="50dp"
         android:text="Benvenuti in CoreTeam!"
         android:textColor="@color/purple_500"
-        android:textSize="24sp"
+        android:textSize="27sp"
         android:textStyle="bold"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <!-- Descrizione -->
     <TextView
         android:id="@+id/textDescriptionHome"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="30dp"
         android:text="Inizia da qui: organizza, collabora, cresci"
         android:textColor="@color/black"
-        android:textSize="16sp"
+        android:textSize="18sp"
         android:textStyle="bold"
-        app:layout_constraintTop_toBottomOf="@id/textViewHome"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.586"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintTop_toBottomOf="@id/textViewHome" />
 
-    <!-- Griglia 2x2 con bottoni -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/buttonGrid"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_marginStart="55dp"
-        android:layout_marginTop="80dp"
-        android:layout_marginEnd="55dp"
+        android:layout_marginStart="48dp"
+        android:layout_marginTop="65dp"
+        android:layout_marginEnd="48dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="1.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/textDescriptionHome">
+        app:layout_constraintTop_toBottomOf="@id/textDescriptionHome"
+        app:layout_constraintVertical_bias="0.0">
 
-        <!-- Diario -->
         <LinearLayout
             android:id="@+id/diaryLayout"
             android:layout_width="wrap_content"
@@ -60,13 +59,13 @@
 
             <Button
                 android:id="@+id/buttonDiary"
-                android:layout_width="100dp"
-                android:layout_height="100dp"
+                android:layout_width="120dp"
+                android:layout_height="120dp"
                 android:background="@drawable/round_button"
-                android:padding="24dp"
+                android:padding="25dp"
                 android:text=""
                 app:icon="@drawable/ic_bookhome"
-                app:iconSize="48dp"
+                app:iconSize="70dp"
                 app:iconTint="@color/white" />
 
             <TextView
@@ -79,7 +78,6 @@
                 android:textStyle="bold" />
         </LinearLayout>
 
-        <!-- Eventi -->
         <LinearLayout
             android:id="@+id/eventLayout"
             android:layout_width="wrap_content"
@@ -91,13 +89,13 @@
 
             <Button
                 android:id="@+id/buttonEvent"
-                android:layout_width="100dp"
-                android:layout_height="100dp"
+                android:layout_width="120dp"
+                android:layout_height="120dp"
                 android:background="@drawable/round_button"
-                android:padding="24dp"
+                android:padding="25dp"
                 android:text=""
                 app:icon="@drawable/ic_calendarhome"
-                app:iconSize="48dp"
+                app:iconSize="70dp"
                 app:iconTint="@color/white" />
 
             <TextView
@@ -110,12 +108,11 @@
                 android:textStyle="bold" />
         </LinearLayout>
 
-        <!-- Turni -->
         <LinearLayout
             android:id="@+id/shiftLayout"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="32dp"
+            android:layout_marginTop="60dp"
             android:gravity="center"
             android:orientation="vertical"
             app:layout_constraintStart_toStartOf="parent"
@@ -123,13 +120,13 @@
 
             <Button
                 android:id="@+id/buttonShift"
-                android:layout_width="100dp"
-                android:layout_height="100dp"
+                android:layout_width="120dp"
+                android:layout_height="120dp"
                 android:background="@drawable/round_button"
-                android:padding="24dp"
+                android:padding="25dp"
                 android:text=""
                 app:icon="@drawable/ic_shifthome"
-                app:iconSize="48dp"
+                app:iconSize="70dp"
                 app:iconTint="@color/white" />
 
             <TextView
@@ -142,12 +139,11 @@
                 android:textStyle="bold" />
         </LinearLayout>
 
-        <!-- Team -->
         <LinearLayout
             android:id="@+id/teamLayout"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="32dp"
+            android:layout_marginTop="60dp"
             android:gravity="center"
             android:orientation="vertical"
             app:layout_constraintEnd_toEndOf="parent"
@@ -155,13 +151,13 @@
 
             <Button
                 android:id="@+id/buttonTeam"
-                android:layout_width="100dp"
-                android:layout_height="100dp"
+                android:layout_width="120dp"
+                android:layout_height="120dp"
                 android:background="@drawable/round_button"
-                android:padding="24dp"
+                android:padding="25dp"
                 android:text=""
                 app:icon="@drawable/ic_teamhome"
-                app:iconSize="48dp"
+                app:iconSize="70dp"
                 app:iconTint="@color/white" />
 
             <TextView

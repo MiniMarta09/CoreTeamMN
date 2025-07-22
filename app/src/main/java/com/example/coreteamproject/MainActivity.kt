@@ -68,18 +68,20 @@ class MainActivity : AppCompatActivity() {
         val bottomNavigation = findViewById<BottomNavigationView>(R.id.bottom_navigation)
 
         val states = arrayOf(
-            intArrayOf(android.R.attr.state_checked),
-            intArrayOf(-android.R.attr.state_checked)
+            intArrayOf(android.R.attr.state_checked), // Stato selezionato
+            intArrayOf(-android.R.attr.state_checked)  // Stato non selezionato
         )
 
+        // Puoi scegliere un colore che contrasti bene con purple_500 quando l'elemento è selezionato.
+        // Ad esempio, potresti usare bianco anche per lo stato selezionato, o un altro colore chiaro.
         val iconColors = intArrayOf(
-            getColor(R.color.purple_500),
-            getColor(R.color.white)
+            getColor(R.color.white), // Icona selezionata: bianca per essere visibile su sfondo viola
+            getColor(R.color.white)  // Icona non selezionata: bianca
         )
 
         val textColors = intArrayOf(
-            getColor(R.color.purple_500),
-            getColor(R.color.white)
+            getColor(R.color.white), // Testo selezionato: bianco per essere visibile su sfondo viola
+            getColor(R.color.white)  // Testo non selezionato: bianco
         )
 
         bottomNavigation.itemIconTintList = ColorStateList(states, iconColors)

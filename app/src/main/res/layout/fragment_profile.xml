@@ -21,7 +21,6 @@
             android:padding="24dp"
             android:background="@color/background_cream">
 
-
             <TextView
                 android:id="@+id/textViewProfile"
                 android:layout_width="wrap_content"
@@ -53,22 +52,29 @@
                 android:text="Nome e Cognome"
                 android:textSize="14sp"
                 android:textColor="@color/purple_500"
-                android:layout_marginTop="25dp"
+                android:layout_marginTop="50dp"
                 android:layout_marginBottom="5dp"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content" />
 
-            <TextView
-                android:id="@+id/text_namelastname"
-                android:text="Non disponibile"
-                android:textSize="18sp"
-                android:textColor="#333333"
-                android:textStyle="bold"
-                android:padding="12dp"
-                android:background="@color/background_cream"
-                android:layout_marginBottom="20dp"
+            <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content" />
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="20dp"
+                app:cardCornerRadius="8dp"
+                app:cardElevation="2dp"
+                app:cardBackgroundColor="@android:color/white">
+
+                <TextView
+                    android:id="@+id/text_namelastname"
+                    android:text="Non disponibile"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="#333333"
+                    android:padding="12dp"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+            </androidx.cardview.widget.CardView>
 
             <!-- Data di nascita -->
             <TextView
@@ -79,17 +85,25 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content" />
 
-            <EditText
-                android:id="@+id/edit_data_nascita"
-                android:hint="es. 15/03/1990"
-                android:textSize="18sp"
-                android:textColor="#333333"
-                android:padding="12dp"
-                android:background="@color/background_cream"
-                android:layout_marginBottom="20dp"
-                android:enabled="false"
+            <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content" />
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="20dp"
+                app:cardCornerRadius="8dp"
+                app:cardElevation="2dp"
+                app:cardBackgroundColor="@android:color/white">
+
+                <EditText
+                    android:id="@+id/edit_data_nascita"
+                    android:hint="es. 15/03/1990"
+                    android:textSize="18sp"
+                    android:textColor="#333333"
+                    android:padding="12dp"
+                    android:enabled="false"
+                    android:background="@android:color/transparent"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+            </androidx.cardview.widget.CardView>
 
             <!-- Email -->
             <TextView
@@ -100,16 +114,23 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content" />
 
-            <TextView
-                android:id="@+id/text_email"
-                android:text="Non disponibile"
-                android:textSize="18sp"
-                android:textColor="#333333"
-                android:padding="12dp"
-                android:background="@color/background_cream"
-                android:layout_marginBottom="20dp"
+            <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content" />
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="20dp"
+                app:cardCornerRadius="8dp"
+                app:cardElevation="2dp"
+                app:cardBackgroundColor="@android:color/white">
+
+                <TextView
+                    android:id="@+id/text_email"
+                    android:text="Non disponibile"
+                    android:textSize="18sp"
+                    android:textColor="#333333"
+                    android:padding="12dp"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+            </androidx.cardview.widget.CardView>
 
             <!-- Settore di Occupazione -->
             <TextView
@@ -120,14 +141,21 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content" />
 
-            <Spinner
-                android:id="@+id/spinner_settore"
+            <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:padding="12dp"
-                android:background="@color/background_cream"
                 android:layout_marginBottom="20dp"
-                android:enabled="false" />
+                app:cardCornerRadius="8dp"
+                app:cardElevation="2dp"
+                app:cardBackgroundColor="@android:color/white">
+
+                <Spinner
+                    android:id="@+id/spinner_settore"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:padding="12dp"
+                    android:enabled="false" />
+            </androidx.cardview.widget.CardView>
 
             <!-- Password -->
             <TextView
@@ -138,29 +166,38 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content" />
 
-            <EditText
-                android:id="@+id/edit_password"
-                android:hint="••••••••"
-                android:textSize="18sp"
-                android:textColor="#333333"
-                android:padding="12dp"
-                android:background="@color/background_cream"
-                android:layout_marginBottom="40dp"
-                android:inputType="textPassword"
-                android:enabled="false"
+            <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content" />
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="40dp"
+                app:cardCornerRadius="8dp"
+                app:cardElevation="2dp"
+                app:cardBackgroundColor="@android:color/white">
+
+                <EditText
+                    android:id="@+id/edit_password"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@android:color/transparent"
+                    android:enabled="false"
+                    android:hint="••••••••"
+                    android:inputType="textPassword"
+                    android:padding="12dp"
+                    android:textColor="#333333"
+                    android:textSize="18sp" />
+            </androidx.cardview.widget.CardView>
 
             <!-- Pulsanti -->
+
             <Button
                 android:id="@+id/btn_modifica"
-                android:text="Modifica Profilo"
-                android:textSize="18sp"
-                android:textColor="#FFFFFF"
-                android:background="@drawable/rounded_button_blue"
-                android:layout_marginBottom="15dp"
                 android:layout_width="match_parent"
-                android:layout_height="50dp" />
+                android:layout_height="50dp"
+                android:layout_marginBottom="15dp"
+                android:background="@drawable/rounded_button_blue"
+                android:text="Modifica Profilo"
+                android:textColor="#FFFFFF"
+                android:textSize="18sp" />
 
             <Button
                 android:id="@+id/btn_salva"
@@ -181,7 +218,5 @@
                 android:layout_marginTop="20dp" />
 
         </LinearLayout>
-
     </ScrollView>
-
 </layout>
