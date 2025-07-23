@@ -21,7 +21,10 @@ import com.example.coreteamproject.databinding.FragmentTeamBinding
 
 class TeamFragment : Fragment() {
 
+    // Binding per il layout del fragment
     private lateinit var binding: FragmentTeamBinding
+
+    // ViewModel per gestire i dati degli utenti
     private lateinit var viewModel: UsersViewModel
 
     override fun onCreateView(
@@ -29,46 +32,47 @@ class TeamFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        // Inizializza il data binding
+        // Inizializza il data binding collegando layout e fragment
         binding = DataBindingUtil.inflate(
             inflater, R.layout.fragment_team, container, false
         )
 
-        // Inizializza il ViewModel
+        // Inizializza il ViewModel per il ciclo di vita di questo fragment
         viewModel = ViewModelProvider(this)[UsersViewModel::class.java]
 
-        // Imposta il ViewModel nel binding
+        // Associa il ViewModel al binding per usarlo nel layout (es. binding.viewModel)
         binding.viewModel = viewModel
-        binding.lifecycleOwner = this
+        binding.lifecycleOwner = this // Lifecycle owner per LiveData
 
-        // Osserva i cambiamenti nei dati
+        // Imposta gli observer per aggiornare UI in base ai dati e stati del ViewModel
         setupObservers()
 
-        // Carica i dipendenti
+        // Richiede al ViewModel di caricare la lista dei dipendenti
         viewModel.caricaDipendenti()
 
+        // Restituisce la root view del binding da visualizzare
         return binding.root
     }
 
     private fun setupObservers() {
-        // Osserva la lista dei dipendenti
+        // Osserva la lista dei dipendenti per aggiornarla nell'interfaccia
         viewModel.dipendenti.observe(viewLifecycleOwner, Observer { dipendenti ->
             mostraDipendenti(dipendenti)
         })
 
-        // Osserva lo stato di loading
+        // Osserva lo stato di caricamento per mostrare o nascondere la progress bar
         viewModel.isLoading.observe(viewLifecycleOwner, Observer { isLoading ->
             binding.progressBarTeam.visibility = if (isLoading) View.VISIBLE else View.GONE
         })
 
-        // Osserva se la lista è vuota
+        // Osserva se la lista è vuota per mostrare un messaggio appropriato
         viewModel.isEmpty.observe(viewLifecycleOwner, Observer { isEmpty ->
             if (isEmpty) {
                 mostraMessaggioVuoto()
             }
         })
 
-        // Osserva gli errori
+        // Osserva eventuali errori e li mostra come Toast, poi li resetta
         viewModel.error.observe(viewLifecycleOwner, Observer { error ->
             if (error != null) {
                 Log.e("TeamFragment", "Errore: $error")
@@ -78,29 +82,31 @@ class TeamFragment : Fragment() {
         })
     }
 
+    // Metodo che aggiorna la UI mostrando la lista di dipendenti come card personalizzate
     private fun mostraDipendenti(dipendenti: List<Dipendente>) {
-        // Pulisce il layout prima di aggiungere nuovi elementi
+        // Pulisce il layout container per evitare duplicati
         binding.teamMembersLayout.removeAllViews()
 
         if (dipendenti.isEmpty()) {
+            // Se non ci sono dipendenti, mostra messaggio di lista vuota
             mostraMessaggioVuoto()
             return
         }
 
         Log.d("TeamFragment", "Mostrando ${dipendenti.size} dipendenti:")
 
-        // Crea una card per ogni dipendente
+        // Cicla ogni dipendente per creare e aggiungere una card nel layout
         for ((index, dipendente) in dipendenti.withIndex()) {
             Log.d("TeamFragment", "Dipendente: ${dipendente.namelastname}, Email: '${dipendente.email}'")
             val cardView = creaDipendenteCard(dipendente)
             binding.teamMembersLayout.addView(cardView)
 
-            // Spazio tra le card
+            // Aggiunge uno spazio tra le card tranne dopo l'ultima
             if (index < dipendenti.size - 1) {
                 val space = android.widget.Space(requireContext()).apply {
                     layoutParams = LinearLayout.LayoutParams(
                         LinearLayout.LayoutParams.MATCH_PARENT,
-                        24 //
+                        24 // altezza spazio in pixel
                     )
                 }
                 binding.teamMembersLayout.addView(space)
@@ -108,6 +114,7 @@ class TeamFragment : Fragment() {
         }
     }
 
+    // Mostra un messaggio quando la lista dei dipendenti è vuota
     private fun mostraMessaggioVuoto() {
         binding.teamMembersLayout.removeAllViews()
         val textViewEmpty = TextView(requireContext()).apply {
@@ -119,8 +126,9 @@ class TeamFragment : Fragment() {
         binding.teamMembersLayout.addView(textViewEmpty)
     }
 
+    // Crea una card personalizzata per visualizzare i dati di un singolo dipendente
     private fun creaDipendenteCard(dipendente: Dipendente): FrameLayout {
-        // Creiamo il FrameLayout esterno che farà da bordo nero
+        // FrameLayout esterno con bordo nero arrotondato
         val frameLayout = FrameLayout(requireContext()).apply {
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
@@ -129,17 +137,16 @@ class TeamFragment : Fragment() {
                 setMargins(0, 0, 0, 24)
             }
 
-            // Impostiamo il background del FrameLayout come nero con bordi arrotondati
+            // Background nero con angoli arrotondati (corners)
             background = GradientDrawable().apply {
-                setColor(resources.getColor(android.R.color.black, null)) // Colore nero
-                cornerRadius = 18f // Bordi arrotondati
+                setColor(resources.getColor(android.R.color.black, null))
+                cornerRadius = 18f
             }
 
-            // Aggiungiamo padding interno ridotto per bordo meno spesso
-            setPadding(2, 2, 2, 2)
+            setPadding(2, 2, 2, 2) // Padding per il bordo
         }
 
-        // Creiamo la CardView interna che ospiterà i contenuti
+        // CardView interna bianca con ombra e angoli arrotondati
         val cardView = CardView(requireContext()).apply {
             layoutParams = FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT,
@@ -152,12 +159,13 @@ class TeamFragment : Fragment() {
             setCardBackgroundColor(ContextCompat.getColor(context, R.color.white))
         }
 
+        // LinearLayout verticale per contenere i testi
         val linearLayout = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(32, 24, 32, 24)
         }
 
-        // TextView per il nome completo
+        // TextView per il nome e cognome
         val textNameLastName = TextView(requireContext()).apply {
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
@@ -171,7 +179,7 @@ class TeamFragment : Fragment() {
             setTypeface(null, Typeface.BOLD)
         }
 
-        // TextView per il settore
+        // TextView per il settore di occupazione
         val textSettore = TextView(requireContext()).apply {
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
@@ -185,6 +193,7 @@ class TeamFragment : Fragment() {
             setTypeface(null, Typeface.BOLD)
         }
 
+        // TextView per l'email
         val textEmail = TextView(requireContext()).apply {
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
@@ -210,18 +219,19 @@ class TeamFragment : Fragment() {
             setTypeface(null, Typeface.BOLD)
         }
 
-        // Aggiungi tutti i TextView al LinearLayout
+        // Aggiunge tutte le TextView al layout verticale
         linearLayout.addView(textNameLastName)
         linearLayout.addView(textSettore)
         linearLayout.addView(textEmail)
         linearLayout.addView(textDataNascita)
 
-        // Aggiungi il LinearLayout al CardView
+        // Aggiunge il layout al CardView
         cardView.addView(linearLayout)
 
-        // Aggiungi la CardView al FrameLayout per creare l'effetto bordo
+        // Aggiunge il CardView al FrameLayout per creare l'effetto bordo nero arrotondato
         frameLayout.addView(cardView)
 
+        // Ritorna la view completa pronta per essere inserita nel layout principale
         return frameLayout
     }
 }

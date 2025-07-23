@@ -16,15 +16,18 @@ import android.view.Menu
 import android.view.MenuItem
 import android.content.Intent
 
+// Classe principale dell'app, gestisce l'interfaccia principale
 class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Imposta il layout dell'interfaccia associato a questa activity
         setContentView(R.layout.activity_main)
 
+        // Crea il canale per le notifiche (necessario da Android 8 in poi)
         createNotificationChannel()
 
-        // Richiesta permesso notifiche (solo Android 13+)
+        // Se il dispositivo usa Android 13 o superiore, richiede il permesso per inviare notifiche
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             ActivityCompat.requestPermissions(
                 this,
@@ -33,64 +36,74 @@ class MainActivity : AppCompatActivity() {
             )
         }
 
+        // Trova la toolbar definita nel layout e la imposta come action bar
         val toolbar = findViewById<com.google.android.material.appbar.MaterialToolbar>(R.id.toolbar)
-        setSupportActionBar(toolbar) // Imposta la Toolbar come ActionBar
+        setSupportActionBar(toolbar)
 
+        // Imposta i colori personalizzati per la bottom navigation
         setupBottomNavigation()
 
+        // Recupera l'utente loggato tramite FirebaseAuth
         val user = FirebaseAuth.getInstance().currentUser
+
+        // Trova il bottom navigation view nel layout
         val bottomNavigation = findViewById<BottomNavigationView>(R.id.bottom_navigation)
 
-        // Mostra il fragment iniziale (HomeFragment)
+        // Visualizza il fragment iniziale all'avvio dell'app
         supportFragmentManager.beginTransaction()
             .replace(R.id.fragment_container, HomeFragment())
             .commit()
 
-        // Gestione del BottomNavigationView
+        // Listener per la selezione delle voci del menu in basso
         bottomNavigation.setOnItemSelectedListener { item ->
+            // Seleziona il fragment da visualizzare in base all'elemento toccato
             val selectedFragment = when (item.itemId) {
-                R.id.nav_home -> HomeFragment()
-                R.id.nav_profile -> ProfileFragment()
+                R.id.nav_home -> HomeFragment()     // Selezionato "Home"
+                R.id.nav_profile -> ProfileFragment() // Selezionato "Profile"
                 else -> null
             }
 
+            // Se è stato selezionato un fragment valido, lo sostituisce nel contenitore
             selectedFragment?.let {
                 supportFragmentManager.beginTransaction()
                     .replace(R.id.fragment_container, it)
                     .commit()
                 true
-            } ?: false
+            } ?: false // Se null, ritorna false
         }
     }
 
-    // Imposta i colori personalizzati per le icone e il testo del BottomNavigationView
+    // Metodo che imposta i colori delle icone e dei testi nella BottomNavigationView
     private fun setupBottomNavigation() {
         val bottomNavigation = findViewById<BottomNavigationView>(R.id.bottom_navigation)
 
+        // Definisce gli stati selezionato/non selezionato
         val states = arrayOf(
-            intArrayOf(android.R.attr.state_checked), // Stato selezionato
-            intArrayOf(-android.R.attr.state_checked)  // Stato non selezionato
+            intArrayOf(android.R.attr.state_checked),    // Quando l'elemento è selezionato
+            intArrayOf(-android.R.attr.state_checked)    // Quando NON è selezionato
         )
 
-        // Puoi scegliere un colore che contrasti bene con purple_500 quando l'elemento è selezionato.
-        // Ad esempio, potresti usare bianco anche per lo stato selezionato, o un altro colore chiaro.
+        // Colori delle icone in base allo stato
         val iconColors = intArrayOf(
-            getColor(R.color.white), // Icona selezionata: bianca per essere visibile su sfondo viola
-            getColor(R.color.white)  // Icona non selezionata: bianca
+            getColor(R.color.white), // Icona selezionata
+            getColor(R.color.white)  // Icona non selezionata
         )
 
+        // Colori del testo in base allo stato
         val textColors = intArrayOf(
-            getColor(R.color.white), // Testo selezionato: bianco per essere visibile su sfondo viola
-            getColor(R.color.white)  // Testo non selezionato: bianco
+            getColor(R.color.white), // Testo selezionato
+            getColor(R.color.white)  // Testo non selezionato
         )
 
+        // Applica i colori alle icone e ai testi del BottomNavigationView
         bottomNavigation.itemIconTintList = ColorStateList(states, iconColors)
         bottomNavigation.itemTextColor = ColorStateList(states, textColors)
     }
 
-    // Crea un canale per le notifiche (richiesto da Android 8+)
+    // Crea un canale notifiche richiesto da Android 8+ per poter inviare notifiche
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            // Definizione del canale: ID, nome e importanza
             val channel = NotificationChannel(
                 "default_channel",
                 "Default Channel",
@@ -99,22 +112,23 @@ class MainActivity : AppCompatActivity() {
                 description = "Channel for general notifications"
             }
 
+            // Registra il canale nel sistema
             val notificationManager = getSystemService(NotificationManager::class.java)
             notificationManager.createNotificationChannel(channel)
         }
     }
 
-    // Aggiunge il menu "Esci" nella Toolbar
+    // Crea il menu nella Toolbar
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
-        menuInflater.inflate(R.menu.toolbar_menu, menu)
+        menuInflater.inflate(R.menu.toolbar_menu, menu) // Carica il layout del menu
         return true
     }
 
-    // Gestisce il click sul menu "Esci"
+    // Gestisce l'evento di click sulle voci del menu
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             R.id.action_logout -> {
-                // Logout da Firebase
+                // Esegue il logout dell'utente da Firebase
                 FirebaseAuth.getInstance().signOut()
 
                 // Torna alla schermata di benvenuto
@@ -123,7 +137,7 @@ class MainActivity : AppCompatActivity() {
                 startActivity(intent)
                 true
             }
-            else -> super.onOptionsItemSelected(item)
+            else -> super.onOptionsItemSelected(item) // Gestione default per altri item
         }
     }
 }

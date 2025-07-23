@@ -189,7 +189,7 @@ class EventFragment : Fragment() {
             eventLayout.addView(descText)
         }
 
-       //Eliminazione evento
+       //Eliminazione dell'evento
         eventLayout.setOnClickListener {
             AlertDialog.Builder(requireContext())
                 .setTitle("Elimina Evento")
