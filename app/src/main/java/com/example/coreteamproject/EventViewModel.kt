@@ -145,7 +145,7 @@ class EventViewModel : ViewModel() {
             currentEvents.remove(eventoToRemove)
             _eventi.value = currentEvents
             _isEmpty.value = currentEvents.isEmpty() // Aggiorno flag lista vuota
-            _deleteSuccess.value = true              // Segnalo successo eliminazione
+            _deleteSuccess.value = true              // Segnala successo eliminazione
 
             // Rimuovo evento da Firestore
             db.collection("events")
@@ -162,7 +162,7 @@ class EventViewModel : ViewModel() {
         _isLoading.value = false // In ogni caso termino caricamento
     }
 
-    // Metodi legacy (per compatibilità) per aggiungere evento con sola stringa
+    // Metodi legacy per aggiungere evento con sola stringa
     fun addEvent(event: String) {
         salvaEvento(event, "", "")
     }

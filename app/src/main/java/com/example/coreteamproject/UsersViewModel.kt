@@ -17,21 +17,21 @@ data class Dipendente(
     val settoreOccupazione: String = "" // Settore lavorativo del dipendente
 )
 
-// ViewModel per gestire dati e stato relativi agli utenti (dipendenti)
+// ViewModel per gestire dati e stato relativi agli utenti
 class UsersViewModel : ViewModel() {
 
     private val db = Firebase.firestore                    // Riferimento a Firestore
     private val auth = FirebaseAuth.getInstance()          // Riferimento all'autenticazione Firebase
 
-    // LiveData che espone la lista di tutti i dipendenti (per esempio per la schermata Team)
+    // LiveData che espone la lista di tutti i dipendenti
     private val _dipendenti = MutableLiveData<List<Dipendente>>()
     val dipendenti: LiveData<List<Dipendente>> = _dipendenti
 
-    // LiveData che espone il profilo dell'utente autenticato (per esempio per la schermata Profilo)
+    // LiveData che espone il profilo dell'utente autenticato
     private val _currentUserProfile = MutableLiveData<Dipendente?>()
     val currentUserProfile: LiveData<Dipendente?> = _currentUserProfile
 
-    // LiveData che indica se è in corso un caricamento dati (loading indicator)
+    // LiveData che indica se è in corso un caricamento dati
     private val _isLoading = MutableLiveData<Boolean>()
     val isLoading: LiveData<Boolean> = _isLoading
 
@@ -43,7 +43,7 @@ class UsersViewModel : ViewModel() {
     private val _saveSuccess = MutableLiveData<Boolean>()
     val saveSuccess: LiveData<Boolean> = _saveSuccess
 
-    // LiveData che indica se la lista dipendenti è vuota (per mostrare messaggi appositi)
+    // LiveData che indica se la lista dipendenti è vuota
     private val _isEmpty = MutableLiveData<Boolean>()
     val isEmpty: LiveData<Boolean> = _isEmpty
 
@@ -164,7 +164,7 @@ class UsersViewModel : ViewModel() {
                 "namelastname" to (user.displayName ?: ""),
                 "dataNascita" to dataNascita,
                 "email" to user.email,
-                "password" to password,                  // Nota: salvare password in chiaro è sconsigliato
+                "password" to password,
                 "settoreOccupazione" to settoreOccupazione,
                 "userId" to user.uid
             )

@@ -14,6 +14,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import java.text.SimpleDateFormat
 import java.util.*
 
+// Fragment per la visualizzazione e modifica dei turni
 class ShiftFragment : Fragment() {
 
     // Variabili per il data binding, ViewModel e formato data
@@ -47,7 +48,7 @@ class ShiftFragment : Fragment() {
         // Configura gli observer per aggiornare l'interfaccia in base ai dati
         setupObservers()
 
-        // Aggiorna il ViewModel con la data odierna per caricare i turni
+        // Aggiorna il ViewModel con la data di oggi  per caricare i turni
         viewModel.updateSelectedDate(today)
 
         // Ritorna la root view legata al fragment
@@ -60,7 +61,7 @@ class ShiftFragment : Fragment() {
             val calendar = Calendar.getInstance()
             calendar.set(year, month, dayOfMonth)
             selectedDate = dbDateFormat.format(calendar.time)  // Formatto la data selezionata
-            viewModel.updateSelectedDate(selectedDate)  // Notifico il ViewModel
+            viewModel.updateSelectedDate(selectedDate)  // Aggiorno il ViewModel
         }
     }
 

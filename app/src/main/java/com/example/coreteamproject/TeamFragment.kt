@@ -19,6 +19,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.Observer
 import com.example.coreteamproject.databinding.FragmentTeamBinding
 
+// Fragment per la visualizzazione della lista di dipendenti
 class TeamFragment : Fragment() {
 
     // Binding per il layout del fragment
@@ -137,7 +138,7 @@ class TeamFragment : Fragment() {
                 setMargins(0, 0, 0, 24)
             }
 
-            // Background nero con angoli arrotondati (corners)
+            // Background nero con angoli arrotondati
             background = GradientDrawable().apply {
                 setColor(resources.getColor(android.R.color.black, null))
                 cornerRadius = 18f

@@ -23,13 +23,13 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // Imposta il layout dell'interfaccia associato a questa activity
+        // Imposta il layout dell'interfaccia
         setContentView(R.layout.activity_main)
 
-        // Crea il canale per le notifiche (necessario da Android 8 in poi)
+        // Crea il canale per le notifiche
         createNotificationChannel()
 
-        // Se il dispositivo usa Android 13 o superiore, richiede il permesso per inviare notifiche
+        // Richiede il permesso per inviare notifiche
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             ActivityCompat.requestPermissions(
                 this,
@@ -65,13 +65,12 @@ class MainActivity : AppCompatActivity() {
                 else -> null
             }
 
-            // Se è stato selezionato un fragment valido, lo sostituisce nel contenitore
             selectedFragment?.let {
                 supportFragmentManager.beginTransaction()
                     .replace(R.id.fragment_container, it)
                     .commit()
                 true
-            } ?: false // Se null, ritorna false
+            } ?: false
         }
         
     }
@@ -92,7 +91,6 @@ class MainActivity : AppCompatActivity() {
             getColor(R.color.white)  // Icona non selezionata
         )
 
-        // Colori del testo in base allo stato
         val textColors = intArrayOf(
             getColor(R.color.white), // Testo selezionato
             getColor(R.color.white)  // Testo non selezionato
@@ -103,7 +101,7 @@ class MainActivity : AppCompatActivity() {
         bottomNavigation.itemTextColor = ColorStateList(states, textColors)
     }
 
-    // Crea un canale notifiche richiesto da Android 8+ per poter inviare notifiche
+    // Crea un canale notifiche per poter inviare notifiche
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             // Definizione del canale: ID, nome e importanza

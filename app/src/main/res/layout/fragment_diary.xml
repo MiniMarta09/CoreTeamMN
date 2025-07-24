@@ -226,7 +226,7 @@
 
             </LinearLayout>
 
-            <!-- ProgressBar per loading -->
+            <!-- ProgressBar -->
             <ProgressBar
                 android:id="@+id/progressBar"
                 android:layout_width="wrap_content"

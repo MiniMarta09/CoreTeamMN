@@ -30,7 +30,6 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         val intent = Intent(this, MainActivity::class.java)
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
 
-        // PendingIntent serve a "prenotare" l’intento per essere eseguito in futuro
         val pendingIntent = PendingIntent.getActivity(
             this,
             0,                      // Codice richiesta
@@ -53,7 +52,6 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         // Ottiene il NotificationManager dal sistema per inviare la notifica
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-        // Se Android è 8.0 o superiore, crea il canale notifiche
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 channelId,

@@ -12,7 +12,7 @@ import java.util.*
 // Data class che rappresenta una singola valutazione mensile
 data class ValutazioneMensile(
     val id: String = "",                  // ID documento Firestore
-    val meseAnno: String = "",            // Mese e anno della valutazione (es. "07/2025")
+    val meseAnno: String = "",            // Mese e anno della valutazione
     val stress: Int = 0,                  // Valore stress
     val rapportoColleghi: Int = 0,       // Valore rapporto con i colleghi
     val soddisfazioneLavoro: Int = 0,     // Valore soddisfazione sul lavoro

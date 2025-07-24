@@ -48,7 +48,7 @@ class ShiftViewModel : ViewModel() {
     private val _canAddShift = MutableLiveData<Boolean>()
     val canAddShift: LiveData<Boolean> = _canAddShift
 
-    // Formattatori per date (per visualizzazione e per uso nel DB)
+    // Formattatori per date
     private val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
     private val dbDateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
 
@@ -61,7 +61,7 @@ class ShiftViewModel : ViewModel() {
     private var currentMonth = ""
 
     init {
-        // Inizializza con la data odierna
+        // Inizializza con la data di oggi
         val today = Calendar.getInstance()
         val todayString = dbDateFormat.format(today.time)
         updateSelectedDate(todayString)  // Carica i dati per la data di oggi

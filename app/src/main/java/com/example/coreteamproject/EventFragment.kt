@@ -13,14 +13,14 @@ import com.example.coreteamproject.databinding.FragmentEventBinding
 import java.text.SimpleDateFormat
 import java.util.*
 
-//Fragment per gestire gli eventi
+// Fragment per gestire gli eventi
 class EventFragment : Fragment() {
 
-    //Variabili per data binding e viewmodel
+    // Variabili per data binding e viewmodel
     private lateinit var binding: FragmentEventBinding
     private lateinit var viewModel: EventViewModel
 
-    //Metodo chiamato alla creazione del fragment
+    // Metodo chiamato alla creazione del fragment
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -42,7 +42,7 @@ class EventFragment : Fragment() {
         return binding.root
     }
 
-    //Configurazione interfaccia utente
+    // Configurazione interfaccia utente
     private fun setupUI() {
         // Listener per selezione sul calendario
         binding.calendarView.setOnDateChangeListener { _, year, month, dayOfMonth ->
@@ -55,7 +55,7 @@ class EventFragment : Fragment() {
         }
     }
     
-    //Configurazione degli observer per reagire ai cambiamenti nel viewmodel
+    // Configurazione degli observer per reagire ai cambiamenti nel viewmodel
     private fun setupObservers() {
         // Osserva la lista degli eventi
         viewModel.eventi.observe(viewLifecycleOwner) { eventi ->
@@ -94,7 +94,7 @@ class EventFragment : Fragment() {
         }
     }
     
-    //Aggioranamento visualizzazione eventi
+    // Aggioranamento visualizzazione eventi
     private fun updateEventsUI(eventi: List<Evento>) {
         binding.eventsLayout.removeAllViews()
         
@@ -104,7 +104,7 @@ class EventFragment : Fragment() {
         }
     }
     
-    //Messaggio se non ci sono eventi
+    // Messaggio se non ci sono eventi
     private fun showEmptyState() {
         binding.eventsLayout.removeAllViews()
         val noEventsText = TextView(requireContext())
@@ -114,23 +114,23 @@ class EventFragment : Fragment() {
         binding.eventsLayout.addView(noEventsText)
     }
 
-    //Finestra di dialogo per aggiungere nuovi eventi
+    // Finestra di dialogo per aggiungere nuovi eventi
     private fun showAddDialog() {
         val layout = LinearLayout(requireContext())
         layout.orientation = LinearLayout.VERTICAL
         layout.setPadding(50, 50, 50, 50)
 
-       //Titolo evento
+       // Titolo evento
         val editTitle = EditText(requireContext())
         editTitle.hint = "Titolo evento"
         layout.addView(editTitle)
 
-        //Ora evento
+        // Ora evento
         val editTime = EditText(requireContext())
         editTime.hint = "Ora (es. 14:30)"
         layout.addView(editTime)
 
-       //Descrizione evento
+       // Descrizione evento
         val editDescription = EditText(requireContext())
         editDescription.hint = "Descrizione"
         layout.addView(editDescription)
@@ -151,14 +151,14 @@ class EventFragment : Fragment() {
             .show()
     }
 
-    //Crea visualizzazione evento
+    // Crea visualizzazione evento
     private fun createEventView(evento: Evento): View {
         val eventLayout = LinearLayout(requireContext())
         eventLayout.orientation = LinearLayout.VERTICAL
         eventLayout.setPadding(32, 32, 32, 32)
         eventLayout.setBackgroundColor(resources.getColor(android.R.color.holo_blue_light))
 
-      //Margini per separare eventi
+      // Margini per separare eventi
        val layoutParams = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
             LinearLayout.LayoutParams.WRAP_CONTENT
@@ -189,7 +189,7 @@ class EventFragment : Fragment() {
             eventLayout.addView(descText)
         }
 
-       //Eliminazione dell'evento
+       // Eliminazione dell'evento
         eventLayout.setOnClickListener {
             AlertDialog.Builder(requireContext())
                 .setTitle("Elimina Evento")

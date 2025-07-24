@@ -18,11 +18,11 @@ import com.example.coreteamproject.databinding.FragmentDiaryBinding
 //Fragment per gestire il diario
 class DiaryFragment : Fragment() {
 
-    //Variabili per databinding e viewmodel
+    // Variabili per databinding e viewmodel
     private lateinit var binding: FragmentDiaryBinding
     private lateinit var viewModel: DiaryViewModel
 
-    //Metodo chiamato alla creazione del fragment
+    // Metodo chiamato alla creazione del fragment
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -48,7 +48,7 @@ class DiaryFragment : Fragment() {
         return binding.root
     }
 
-    //Configura gli observer per valutare i cambiamenti del viewmodel
+    // Configura gli observer per valutare i cambiamenti del viewmodel
     private fun setupObservers() {
         // Observer per le valutazioni
         viewModel.valutazioni.observe(viewLifecycleOwner, Observer { valutazioni ->
@@ -79,7 +79,7 @@ class DiaryFragment : Fragment() {
         })
     }
 
-    //Configura tutti i listener per i controlli dell'interfaccia
+    // Configura tutti i listener per i controlli dell'interfaccia
     private fun setupListeners() {
         // Pulsante + per aggiungere valutazione
         binding.btnAggiungiValutazione.setOnClickListener {
@@ -112,7 +112,7 @@ class DiaryFragment : Fragment() {
             override fun onStopTrackingTouch(seekBar: SeekBar?) {}
         })
 
-        //Listener per i SeekBarColleghi
+        // Listener per i SeekBarColleghi
         binding.seekbarColleghi.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 binding.textColleghiValue.text = "${progress + 1}"
@@ -123,7 +123,7 @@ class DiaryFragment : Fragment() {
             override fun onStopTrackingTouch(seekBar: SeekBar?) {}
         })
 
-        //Listener per i SeekBarSoddisfazione
+        // Listener per i SeekBarSoddisfazione
         binding.seekbarSoddisfazione.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 binding.textSoddisfazioneValue.text = "${progress + 1}"
@@ -135,7 +135,7 @@ class DiaryFragment : Fragment() {
         })
     }
 
-    //Aggiornamento valutazioni
+    // Aggiornamento valutazioni
     private fun aggiornaListaValutazioni(valutazioni: List<ValutazioneMensile>) {
         binding.recyclerValutazioni.removeAllViews()
 
@@ -155,7 +155,7 @@ class DiaryFragment : Fragment() {
         }
     }
 
-    //Mostra messaggio se non ci sono valutazioni
+    // Messaggio se non ci sono valutazioni
     private fun mostraMessaggioVuoto() {
         binding.recyclerValutazioni.removeAllViews()
         val textNoData = TextView(requireContext())
@@ -165,7 +165,7 @@ class DiaryFragment : Fragment() {
         binding.recyclerValutazioni.addView(textNoData)
     }
 
-    //Aggiunta valutazione alla lista
+    // Aggiunta valutazione alla lista
     private fun aggiungiValutazioneAllaLista(valutazione: ValutazioneMensile) {
         // Creiamo il FrameLayout esterno che farà da bordo nero
         val frameLayout = FrameLayout(requireContext()).apply {

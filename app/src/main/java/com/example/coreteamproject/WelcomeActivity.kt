@@ -29,7 +29,7 @@ class WelcomeActivity : AppCompatActivity() {
             Handler(Looper.getMainLooper()).postDelayed({
                 startMainActivity()
             }, 2000) // 2000 millisecondi = 2 secondi
-            return // Non proseguire oltre perché utente già loggato
+            return
         }
 
         // Registra il launcher per ricevere il risultato dell'autenticazione

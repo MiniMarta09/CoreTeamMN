@@ -78,7 +78,7 @@ class ProfileFragment : Fragment() {
         val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, settoriOccupazione)
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         binding.spinnerSettore.adapter = adapter
-        binding.spinnerSettore.isEnabled = false // inizialmente disabilitato
+        binding.spinnerSettore.isEnabled = false
     }
 
     // Configura gli observer per i LiveData nel ViewModel
