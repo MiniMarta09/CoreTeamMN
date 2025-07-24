@@ -16,110 +16,117 @@ import java.util.*
 
 class ShiftFragment : Fragment() {
 
+    // Variabili per il data binding, ViewModel e formato data
     private lateinit var binding: FragmentShiftBinding
     private lateinit var viewModel: ShiftViewModel
     private val dbDateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-    private var selectedDate = ""
+    private var selectedDate = ""  // Data selezionata dall'utente
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        // Inizializza data binding
+        // Inizializza il data binding con il layout fragment_shift.xml
         binding = DataBindingUtil.inflate(inflater, R.layout.fragment_shift, container, false)
-        
-        // Inizializza ViewModel
+
+        // Inizializza il ViewModel associato a questo fragment
         viewModel = ViewModelProvider(this)[ShiftViewModel::class.java]
         binding.viewModel = viewModel
         binding.lifecycleOwner = this
-        
-        // Data di oggi
+
+        // Imposta la data odierna come data selezionata di default
         val today = dbDateFormat.format(Date())
         selectedDate = today
-        
-        // Setup calendario
+
+        // Configura il calendario per la selezione delle date
         setupCalendar()
-        
-        // Setup bottone aggiungi
+
+        // Configura il pulsante per aggiungere un turno
         setupAddButton()
-        
-        // Setup observers
+
+        // Configura gli observer per aggiornare l'interfaccia in base ai dati
         setupObservers()
-        
-        // Inizializza con data corrente
+
+        // Aggiorna il ViewModel con la data odierna per caricare i turni
         viewModel.updateSelectedDate(today)
-        
+
+        // Ritorna la root view legata al fragment
         return binding.root
     }
-    
+
+    // Metodo per gestire la selezione della data nel calendario
     private fun setupCalendar() {
         binding.calendarView.setOnDateChangeListener { _, year, month, dayOfMonth ->
             val calendar = Calendar.getInstance()
             calendar.set(year, month, dayOfMonth)
-            selectedDate = dbDateFormat.format(calendar.time)
-            viewModel.updateSelectedDate(selectedDate)
+            selectedDate = dbDateFormat.format(calendar.time)  // Formatto la data selezionata
+            viewModel.updateSelectedDate(selectedDate)  // Notifico il ViewModel
         }
     }
-    
+
+    // Metodo per configurare il bottone di aggiunta turno
     private fun setupAddButton() {
         binding.btnAddShift.setOnClickListener {
             viewModel.canAddShift.value?.let { canAdd ->
                 if (canAdd) {
-                    showAddDialog()
+                    showAddDialog()  // Mostra dialog per inserire nuovo turno
                 } else {
+                    // Messaggio se non si possono aggiungere turni per date future
                     Toast.makeText(requireContext(), "Non puoi inserire turni per date future", Toast.LENGTH_LONG).show()
                 }
             }
         }
     }
-    
+
+    // Imposta gli observer per aggiornare UI e notifiche da ViewModel
     private fun setupObservers() {
-        // Observer per i turni
+        // Osserva la lista di turni per aggiornare l'interfaccia
         viewModel.turni.observe(viewLifecycleOwner) { turni ->
             updateShiftsUI(turni)
         }
-        
-        // Observer per errori
+
+        // Osserva gli errori e mostra un Toast se presente
         viewModel.error.observe(viewLifecycleOwner) { error ->
             error?.let {
                 Toast.makeText(requireContext(), it, Toast.LENGTH_SHORT).show()
                 viewModel.clearError()
             }
         }
-        
-        // Observer per successo salvataggio
+
+        // Osserva successo salvataggio e mostra notifica
         viewModel.saveSuccess.observe(viewLifecycleOwner) { success ->
             if (success) {
                 Toast.makeText(requireContext(), "Turno salvato!", Toast.LENGTH_SHORT).show()
                 viewModel.clearSaveSuccess()
             }
         }
-        
-        // Observer per successo eliminazione
+
+        // Osserva successo eliminazione e mostra notifica
         viewModel.deleteSuccess.observe(viewLifecycleOwner) { success ->
             if (success) {
                 Toast.makeText(requireContext(), "Turno eliminato!", Toast.LENGTH_SHORT).show()
                 viewModel.clearDeleteSuccess()
             }
         }
-        
-        // Observer per stato vuoto
+
+        // Osserva se la lista dei turni è vuota per mostrare messaggio
         viewModel.isEmpty.observe(viewLifecycleOwner) { isEmpty ->
             if (isEmpty) {
                 showEmptyState()
             }
         }
     }
-    
+
+    // Aggiorna la UI dei turni cancellando e ricreando le viste
     private fun updateShiftsUI(turni: List<Turno>) {
         binding.shiftsLayout.removeAllViews()
-        
         for (turno in turni) {
             val shiftView = createShiftView(turno)
             binding.shiftsLayout.addView(shiftView)
         }
     }
-    
+
+    // Mostra un messaggio quando non ci sono turni per la data selezionata
     private fun showEmptyState() {
         binding.shiftsLayout.removeAllViews()
         val textView = TextView(requireContext())
@@ -129,22 +136,22 @@ class ShiftFragment : Fragment() {
         binding.shiftsLayout.addView(textView)
     }
 
+    // Mostra un dialog per aggiungere un nuovo turno con selezione orari di inizio e fine
     private fun showAddDialog() {
-        // Generiamo la lista di orari ogni 15 minuti
+        // Genera la lista degli orari ogni 15 minuti tramite ViewModel
         val timeList = viewModel.generateTimeList()
-        var selectedStartTime = "08:00" // Valore predefinito per inizio
-        var selectedEndTime = "17:00" // Valore predefinito per fine
-        
-        // Layout per il dialog
+        var selectedStartTime = "08:00" // Valore predefinito per inizio turno
+        var selectedEndTime = "17:00"   // Valore predefinito per fine turno
+
+        // Layout verticale per contenere gli spinner e label
         val layout = LinearLayout(requireContext())
         layout.orientation = LinearLayout.VERTICAL
         layout.setPadding(50, 50, 50, 50)
-        
-        // Riga per l'orario di inizio
+
+        // Riga per orario inizio: label + spinner
         val startRow = LinearLayout(requireContext())
         startRow.orientation = LinearLayout.HORIZONTAL
-        
-        // TextView per l'etichetta dell'orario di inizio
+
         val tvStartTime = TextView(requireContext())
         tvStartTime.text = "Orario inizio:"
         tvStartTime.textSize = 16f
@@ -156,8 +163,7 @@ class ShiftFragment : Fragment() {
             gravity = android.view.Gravity.CENTER_VERTICAL
         }
         startRow.addView(tvStartTime)
-        
-        // Spinner per l'orario di inizio
+
         val startSpinner = Spinner(requireContext())
         val startAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_dropdown_item, timeList)
         startSpinner.adapter = startAdapter
@@ -165,7 +171,6 @@ class ShiftFragment : Fragment() {
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
                 selectedStartTime = timeList[position]
             }
-            
             override fun onNothingSelected(parent: AdapterView<*>?) {}
         }
         startSpinner.layoutParams = LinearLayout.LayoutParams(
@@ -174,19 +179,18 @@ class ShiftFragment : Fragment() {
         )
         startRow.addView(startSpinner)
         layout.addView(startRow)
-        
-        // Spaziatore
+
+        // Spaziatore per separare gli elementi
         val spacer1 = View(requireContext())
         spacer1.layoutParams = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT, 20
         )
         layout.addView(spacer1)
-        
-        // Riga per l'orario di fine
+
+        // Riga per orario fine
         val endRow = LinearLayout(requireContext())
         endRow.orientation = LinearLayout.HORIZONTAL
-        
-        // TextView per l'etichetta dell'orario di fine
+
         val tvEndTime = TextView(requireContext())
         tvEndTime.text = "Orario fine:"
         tvEndTime.textSize = 16f
@@ -198,8 +202,7 @@ class ShiftFragment : Fragment() {
             gravity = android.view.Gravity.CENTER_VERTICAL
         }
         endRow.addView(tvEndTime)
-        
-        // Spinner per l'orario di fine
+
         val endSpinner = Spinner(requireContext())
         val endAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_dropdown_item, timeList)
         endSpinner.adapter = endAdapter
@@ -207,38 +210,37 @@ class ShiftFragment : Fragment() {
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
                 selectedEndTime = timeList[position]
             }
-            
             override fun onNothingSelected(parent: AdapterView<*>?) {}
         }
         endSpinner.layoutParams = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.WRAP_CONTENT,
             LinearLayout.LayoutParams.WRAP_CONTENT
         )
-        
-        // Impostiamo il valore predefinito dello spinner di fine a 17:00
+
+        // Imposta di default l'orario fine a "17:00"
         val defaultEndPosition = timeList.indexOf("17:00")
         if (defaultEndPosition >= 0) {
             endSpinner.setSelection(defaultEndPosition)
         }
-        
+
         endRow.addView(endSpinner)
         layout.addView(endRow)
-        
+
+        // Costruzione e visualizzazione del dialog
         AlertDialog.Builder(requireContext())
             .setTitle("Nuovo Turno")
             .setView(layout)
             .setPositiveButton("Salva") { _, _ ->
                 val timeRange = "$selectedStartTime - $selectedEndTime"
                 val title = "Turno $selectedDate"
-                
+                // Salva il nuovo turno tramite ViewModel
                 viewModel.saveShift(title, timeRange, "")
             }
             .setNegativeButton("Annulla", null)
             .show()
     }
-    
 
-
+    // Crea dinamicamente una View che rappresenta un turno con titolo, orario e descrizione
     private fun createShiftView(turno: Turno): View {
         val shiftLayout = LinearLayout(requireContext())
         shiftLayout.orientation = LinearLayout.VERTICAL
@@ -252,19 +254,19 @@ class ShiftFragment : Fragment() {
         layoutParams.setMargins(0, 16, 0, 16)
         shiftLayout.layoutParams = layoutParams
 
-        // Estrai i dati dal turno
+        // Estrae le informazioni dal turno
         val title = turno.title
         val time = turno.time
         val description = turno.description
-        
-        // Titolo
+
+        // Titolo in grassetto e grande
         val titleText = TextView(requireContext())
         titleText.text = title
         titleText.textSize = 18f
         titleText.setTypeface(null, android.graphics.Typeface.BOLD)
         shiftLayout.addView(titleText)
 
-        // Ora
+        // Mostra orario se presente
         if (time.isNotEmpty()) {
             val timeText = TextView(requireContext())
             timeText.text = "Orario: $time"
@@ -272,7 +274,7 @@ class ShiftFragment : Fragment() {
             shiftLayout.addView(timeText)
         }
 
-        // Descrizione
+        // Mostra descrizione se presente
         if (description.isNotEmpty()) {
             val descText = TextView(requireContext())
             descText.text = description
@@ -280,12 +282,13 @@ class ShiftFragment : Fragment() {
             shiftLayout.addView(descText)
         }
 
+        // Aggiunge click listener per cancellare il turno con conferma dialog
         shiftLayout.setOnClickListener {
             AlertDialog.Builder(requireContext())
                 .setTitle("Elimina Turno")
                 .setMessage("Vuoi eliminare '$title'?")
                 .setPositiveButton("Elimina") { _, _ ->
-                    viewModel.deleteShift(turno.id)
+                    viewModel.deleteShift(turno.id)  // Chiamata per eliminare tramite ViewModel
                 }
                 .setNegativeButton("Annulla", null)
                 .show()

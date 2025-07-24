@@ -256,7 +256,7 @@ class DiaryFragment : Fragment() {
         containerLayout.addView(textColleghi)
         containerLayout.addView(textSoddisfazione)
 
-        // Aggiungi il container alla CardView
+        // Aggiunge il container alla CardView
         cardView.addView(containerLayout)
 
         // Aggiungi la CardView al FrameLayout

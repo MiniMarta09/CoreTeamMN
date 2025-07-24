@@ -15,13 +15,19 @@ import com.example.coreteamproject.databinding.FragmentProfileBinding
 import com.firebase.ui.auth.AuthUI
 import com.google.firebase.auth.FirebaseAuth
 
+// Fragment per la visualizzazione e modifica del profilo utente
 class ProfileFragment : Fragment() {
 
+    // Binding per accedere aile componenti del layout
     private lateinit var binding: FragmentProfileBinding
+
+    // ViewModel associato per gestire i dati e la logica
     private lateinit var viewModel: UsersViewModel
+
+    // Flag che indica se l'utente è in modalità modifica
     private var isEditing = false
 
-    // Opzioni per il settore di occupazione
+    // Lista dei settori lavorativi disponibili per lo spinner
     private val settoriOccupazione = arrayOf(
         "Seleziona settore",
         "Contabilità e amministrazione",
@@ -31,61 +37,65 @@ class ProfileFragment : Fragment() {
         "Assistenza Clienti"
     )
 
+    // Metodo principale del Fragment, eseguito quando viene creato il layout
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        // Inizializza il data binding
+        // Inizializza il binding per il layout XML
         binding = DataBindingUtil.inflate(
             inflater, R.layout.fragment_profile, container, false
         )
 
-        // Inizializza il ViewModel
+        // Ottiene il ViewModel associato a questo Fragment
         viewModel = ViewModelProvider(this)[UsersViewModel::class.java]
 
-        // Imposta il ViewModel nel binding
+        // Collega il ViewModel al layout
         binding.viewModel = viewModel
         binding.lifecycleOwner = this
 
-        // Configura lo spinner
+        // Imposta lo spinner (menu a tendina)
         setupSpinner()
 
-        // Configura gli observer
+        // Imposta gli observer per aggiornare la UI
         setupObservers()
 
-        // Mostra i dati base dell'utente
+        // Visualizza i dati base dell'utente Firebase
         setupUserData()
 
-        // Configura i listener dei pulsanti
+        // Collega i listener ai pulsanti "Modifica" e "Salva"
         setupClickListeners()
 
-        // Carica il profilo dell'utente
+        // Richiede il caricamento del profilo utente dal ViewModel
         viewModel.caricaProfiloUtente()
 
+        // Ritorna la vista associata al Fragment
         return binding.root
     }
 
+    // Configura lo spinner con i settori lavorativi
     private fun setupSpinner() {
         val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, settoriOccupazione)
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         binding.spinnerSettore.adapter = adapter
-        binding.spinnerSettore.isEnabled = false
+        binding.spinnerSettore.isEnabled = false // inizialmente disabilitato
     }
 
+    // Configura gli observer per i LiveData nel ViewModel
     private fun setupObservers() {
-        // Osserva il profilo dell'utente corrente
+        // Osserva il profilo utente e aggiorna i campi se non è nullo
         viewModel.currentUserProfile.observe(viewLifecycleOwner, Observer { dipendente ->
             if (dipendente != null) {
                 aggiornaCampiProfilo(dipendente)
             }
         })
 
-        // Osserva lo stato di loading
+        // Mostra o nasconde la progress bar in base allo stato di loading
         viewModel.isLoading.observe(viewLifecycleOwner, Observer { isLoading ->
             binding.progressBarProfile.visibility = if (isLoading) View.VISIBLE else View.GONE
         })
 
-        // Osserva gli errori
+        // Mostra un messaggio di errore se presente
         viewModel.error.observe(viewLifecycleOwner, Observer { error ->
             if (error != null) {
                 Toast.makeText(requireContext(), error, Toast.LENGTH_SHORT).show()
@@ -93,7 +103,7 @@ class ProfileFragment : Fragment() {
             }
         })
 
-        // Osserva il successo del salvataggio
+        // Mostra messaggio di successo al salvataggio e disabilita la modifica
         viewModel.saveSuccess.observe(viewLifecycleOwner, Observer { success ->
             if (success) {
                 Toast.makeText(requireContext(), "Dati salvati!", Toast.LENGTH_SHORT).show()
@@ -103,6 +113,7 @@ class ProfileFragment : Fragment() {
         })
     }
 
+    // Visualizza il nome e l'email dell'utente loggato
     private fun setupUserData() {
         val user = FirebaseAuth.getInstance().currentUser
         if (user != null) {
@@ -111,8 +122,9 @@ class ProfileFragment : Fragment() {
         }
     }
 
+    // Configura i click dei pulsanti "Modifica" e "Salva"
     private fun setupClickListeners() {
-        // Pulsante Modifica Profilo
+
         binding.btnModifica.setOnClickListener {
             if (!isEditing) {
                 abilitaModifica()
@@ -121,19 +133,18 @@ class ProfileFragment : Fragment() {
             }
         }
 
-        // Pulsante Salva
+        // Salva i dati quando si preme su "Salva"
         binding.btnSalva.setOnClickListener {
             salvaDatiProfilo()
         }
-
     }
 
+    // Aggiorna i campi del profilo utente con i dati ricevuti
     private fun aggiornaCampiProfilo(dipendente: Dipendente) {
         binding.editDataNascita.setText(dipendente.dataNascita)
-        // Non mostrare la password per sicurezza
-        binding.editPassword.setText("")
+        binding.editPassword.setText("") // per sicurezza, non si mostra la password
 
-        // Imposta il settore di occupazione
+        // Se il settore è presente, seleziona il valore corretto nello spinner
         if (dipendente.settoreOccupazione.isNotEmpty()) {
             val position = settoriOccupazione.indexOf(dipendente.settoreOccupazione)
             if (position != -1) {
@@ -142,44 +153,39 @@ class ProfileFragment : Fragment() {
         }
     }
 
+    // Abilita i campi per modificare il profilo
     private fun abilitaModifica() {
         isEditing = true
-
-        // Abilita i campi editabili
         binding.editDataNascita.isEnabled = true
         binding.editPassword.isEnabled = true
         binding.spinnerSettore.isEnabled = true
-
-        // Mostra il pulsante Salva
         binding.btnSalva.visibility = View.VISIBLE
         binding.btnModifica.text = "Annulla"
     }
 
+    // Disabilita la modalità modifica e ripristina lo stato iniziale
     private fun disabilitaModifica() {
         isEditing = false
-
-        // Disabilita i campi
         binding.editDataNascita.isEnabled = false
         binding.editPassword.isEnabled = false
         binding.spinnerSettore.isEnabled = false
-
-        // Nascondi il pulsante Salva
         binding.btnSalva.visibility = View.GONE
         binding.btnModifica.text = "Modifica Profilo"
     }
 
+    // Legge i dati dai campi e invia la richiesta di salvataggio al ViewModel
     private fun salvaDatiProfilo() {
         val dataNascita = binding.editDataNascita.text.toString()
         val password = binding.editPassword.text.toString()
         val settoreSelezionato = binding.spinnerSettore.selectedItem.toString()
 
-        // Verifica che sia stato selezionato un settore valido
+        // Controlla che sia stato selezionato un settore valido
         if (settoreSelezionato == "Seleziona settore") {
             Toast.makeText(requireContext(), "Seleziona un settore di occupazione", Toast.LENGTH_SHORT).show()
             return
         }
 
-        // Salva tramite il ViewModel
+        // Passa i dati al ViewModel per il salvataggio
         viewModel.salvaProfilo(dataNascita, password, settoreSelezionato)
     }
 }
