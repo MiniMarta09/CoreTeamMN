@@ -188,7 +188,6 @@
             </androidx.cardview.widget.CardView>
 
             <!-- Pulsanti -->
-
             <Button
                 android:id="@+id/btn_modifica"
                 android:layout_width="match_parent"

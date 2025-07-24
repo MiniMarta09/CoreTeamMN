@@ -34,6 +34,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/textViewHome" />
 
+    <!-- Grglia 2x2 con tutti i bottoni nella home, circolari con icona in mezzo e scritta sotto -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/buttonGrid"
         android:layout_width="0dp"

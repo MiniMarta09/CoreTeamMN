@@ -42,6 +42,7 @@
             app:layout_constraintStart_toStartOf="parent"
             android:layout_marginTop="8dp" />
 
+        <!-- Calendario -->
         <CalendarView
             android:id="@+id/calendarView"
             android:layout_width="match_parent"
@@ -52,6 +53,7 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/textDescriptionEvent" />
 
+        <!-- Aggiungi Evento Button -->
         <Button
             android:id="@+id/btnAddEvent"
             android:layout_width="wrap_content"
@@ -93,6 +95,7 @@
 
         </ScrollView>
 
+        <!-- ProgressBar -->
         <ProgressBar
             android:id="@+id/progressBar"
             android:layout_width="wrap_content"

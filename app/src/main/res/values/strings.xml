@@ -2,7 +2,6 @@
     <string name="app_name">CoreTeamProject</string>
 
     <!-- FirebaseUI Strings -->
-    <!-- Aggiungendo queste stringhe, sovrascriviamo quelle di default in inglese -->
     <string name="fui_sign_in_default">Accedi</string>
     <string name="fui_button_text_save">Registrati</string>
     <string name="fui_title_register_email">Registrazione</string>
