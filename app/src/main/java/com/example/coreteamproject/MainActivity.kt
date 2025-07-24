@@ -15,6 +15,8 @@ import androidx.core.app.ActivityCompat
 import android.view.Menu
 import android.view.MenuItem
 import android.content.Intent
+import com.google.firebase.messaging.FirebaseMessaging
+import android.util.Log
 
 class MainActivity : AppCompatActivity() {
 
@@ -61,6 +63,7 @@ class MainActivity : AppCompatActivity() {
                 true
             } ?: false
         }
+        
     }
 
     // Imposta i colori personalizzati per le icone e il testo del BottomNavigationView
