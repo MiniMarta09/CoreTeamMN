@@ -226,6 +226,43 @@ class ShiftFragment : Fragment() {
 
         endRow.addView(endSpinner)
         layout.addView(endRow)
+        
+        // Spaziatore per separare gli elementi
+        val spacer2 = View(requireContext())
+        spacer2.layoutParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, 20
+        )
+        layout.addView(spacer2)
+        
+        // Titolo per la sezione modalità di lavoro
+        val tvWorkMode = TextView(requireContext())
+        tvWorkMode.text = "Modalità di lavoro:"
+        tvWorkMode.textSize = 16f
+        layout.addView(tvWorkMode)
+        
+        // RadioGroup per scegliere tra presenza e smartworking
+        val radioGroup = RadioGroup(requireContext())
+        radioGroup.orientation = RadioGroup.HORIZONTAL
+        
+        val rbPresenza = RadioButton(requireContext())
+        rbPresenza.id = View.generateViewId()
+        rbPresenza.text = "Presenza"
+        rbPresenza.isChecked = true // Selezionato di default
+        
+        val rbSmartworking = RadioButton(requireContext())
+        rbSmartworking.id = View.generateViewId()
+        rbSmartworking.text = "Smartworking"
+        
+        radioGroup.addView(rbPresenza)
+        
+        // Spaziatore tra i radio button
+        val radioSpacer = View(requireContext())
+        radioSpacer.layoutParams = LinearLayout.LayoutParams(20, 
+            LinearLayout.LayoutParams.MATCH_PARENT)
+        radioGroup.addView(radioSpacer)
+        
+        radioGroup.addView(rbSmartworking)
+        layout.addView(radioGroup)
 
         // Costruzione e visualizzazione del dialog
         AlertDialog.Builder(requireContext())
@@ -234,8 +271,12 @@ class ShiftFragment : Fragment() {
             .setPositiveButton("Salva") { _, _ ->
                 val timeRange = "$selectedStartTime - $selectedEndTime"
                 val title = "Turno $selectedDate"
+                
+                // Determina la modalità di lavoro selezionata
+                val workMode = if (rbPresenza.isChecked) "presenza" else "smartworking"
+                
                 // Salva il nuovo turno tramite ViewModel
-                viewModel.saveShift(title, timeRange, "")
+                viewModel.saveShift(title, timeRange, "", workMode)
             }
             .setNegativeButton("Annulla", null)
             .show()
@@ -259,6 +300,7 @@ class ShiftFragment : Fragment() {
         val title = turno.title
         val time = turno.time
         val description = turno.description
+        val workMode = turno.workMode
 
         // Titolo in grassetto e grande
         val titleText = TextView(requireContext())
@@ -274,6 +316,13 @@ class ShiftFragment : Fragment() {
             timeText.textSize = 14f
             shiftLayout.addView(timeText)
         }
+        
+        // Mostra modalità di lavoro
+        val workModeText = TextView(requireContext())
+        val formattedWorkMode = workMode.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
+        workModeText.text = "Modalità: $formattedWorkMode"
+        workModeText.textSize = 14f
+        shiftLayout.addView(workModeText)
 
         // Mostra descrizione se presente
         if (description.isNotEmpty()) {

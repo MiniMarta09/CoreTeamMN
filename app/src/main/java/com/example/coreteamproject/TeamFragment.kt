@@ -3,6 +3,8 @@ package com.example.coreteamproject
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -15,8 +17,8 @@ import androidx.cardview.widget.CardView
 import androidx.core.content.ContextCompat
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModelProvider
 import com.example.coreteamproject.databinding.FragmentTeamBinding
 
 // Fragment per la visualizzazione della lista di dipendenti
@@ -47,6 +49,9 @@ class TeamFragment : Fragment() {
 
         // Imposta gli observer per aggiornare UI in base ai dati e stati del ViewModel
         setupObservers()
+        
+        // Imposta il listener per la barra di ricerca
+        setupSearchListener()
 
         // Richiede al ViewModel di caricare la lista dei dipendenti
         viewModel.caricaDipendenti()
@@ -55,9 +60,13 @@ class TeamFragment : Fragment() {
         return binding.root
     }
 
+    // Lista originale di dipendenti, usata per il filtraggio
+    private var listaDipendentiCompleta = listOf<Dipendente>()
+    
     private fun setupObservers() {
         // Osserva la lista dei dipendenti per aggiornarla nell'interfaccia
         viewModel.dipendenti.observe(viewLifecycleOwner, Observer { dipendenti ->
+            listaDipendentiCompleta = dipendenti
             mostraDipendenti(dipendenti)
         })
 
@@ -83,7 +92,60 @@ class TeamFragment : Fragment() {
         })
     }
 
-    // Metodo che aggiorna la UI mostrando la lista di dipendenti come card personalizzate
+    // Configura il listener per la barra di ricerca
+    private fun setupSearchListener() {
+        binding.searchEditText.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
+                // Non necessario
+            }
+            
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                // Non necessario
+            }
+            
+            override fun afterTextChanged(s: Editable?) {
+                // Filtra la lista ogni volta che cambia il testo
+                filtraDipendenti(s.toString())
+            }
+        })
+    }
+    
+    // Filtra i dipendenti in base al testo di ricerca
+    private fun filtraDipendenti(query: String) {
+        if (query.isEmpty()) {
+            // Se la query è vuota, mostra tutti i dipendenti
+            mostraDipendenti(listaDipendentiCompleta)
+            return
+        }
+        
+        val queryLowerCase = query.lowercase().trim()
+        
+        // Filtra i dipendenti il cui nome/cognome contiene la query
+        val dipendentiFiltrati = listaDipendentiCompleta.filter { dipendente ->
+            dipendente.namelastname.lowercase().contains(queryLowerCase)
+        }
+        
+        // Mostra i dipendenti filtrati o un messaggio se non ce ne sono
+        if (dipendentiFiltrati.isEmpty()) {
+            mostraMessaggioRicercaVuota(query)
+        } else {
+            mostraDipendenti(dipendentiFiltrati)
+        }
+    }
+    
+    // Mostra un messaggio quando la ricerca non produce risultati
+    private fun mostraMessaggioRicercaVuota(query: String) {
+        binding.teamMembersLayout.removeAllViews()
+        val textViewEmpty = TextView(requireContext()).apply {
+            text = "Nessun dipendente trovato per: '$query'"
+            textSize = 16f
+            setTextColor(resources.getColor(android.R.color.darker_gray, null))
+            setPadding(32, 32, 32, 32)
+        }
+        binding.teamMembersLayout.addView(textViewEmpty)
+    }
+
+    // Metodo che aggiorna la UI mostrando la lista di dipendenti raggruppati per settore
     private fun mostraDipendenti(dipendenti: List<Dipendente>) {
         // Pulisce il layout container per evitare duplicati
         binding.teamMembersLayout.removeAllViews()
@@ -95,22 +157,72 @@ class TeamFragment : Fragment() {
         }
 
         Log.d("TeamFragment", "Mostrando ${dipendenti.size} dipendenti:")
+        
+        // Raggruppa i dipendenti per settore
+        val dipendentiPerSettore = dipendenti.groupBy { it.settoreOccupazione.ifEmpty { "Non specificato" } }
+        
+        // Ordina i settori alfabeticamente
+        val settoriOrdinati = dipendentiPerSettore.keys.sorted()
+        
+        // Per ogni settore, visualizza intestazione e dipendenti
+        for (settore in settoriOrdinati) {
+            // Aggiungi intestazione del settore
+            val headerSettore = creaHeaderSettore(settore)
+            binding.teamMembersLayout.addView(headerSettore)
+            
+            // Aggiungi i dipendenti di questo settore
+            val dipendentiSettore = dipendentiPerSettore[settore] ?: emptyList()
+            for ((index, dipendente) in dipendentiSettore.withIndex()) {
+                Log.d("TeamFragment", "Dipendente: ${dipendente.namelastname}, Settore: ${dipendente.settoreOccupazione}")
+                val cardView = creaDipendenteCard(dipendente)
+                binding.teamMembersLayout.addView(cardView)
 
-        // Cicla ogni dipendente per creare e aggiungere una card nel layout
-        for ((index, dipendente) in dipendenti.withIndex()) {
-            Log.d("TeamFragment", "Dipendente: ${dipendente.namelastname}, Email: '${dipendente.email}'")
-            val cardView = creaDipendenteCard(dipendente)
-            binding.teamMembersLayout.addView(cardView)
-
-            // Aggiunge uno spazio tra le card tranne dopo l'ultima
-            if (index < dipendenti.size - 1) {
-                val space = android.widget.Space(requireContext()).apply {
-                    layoutParams = LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT,
-                        24 // altezza spazio in pixel
-                    )
+                // Aggiunge uno spazio tra le card tranne dopo l'ultima del settore
+                if (index < dipendentiSettore.size - 1) {
+                    val space = android.widget.Space(requireContext()).apply {
+                        layoutParams = LinearLayout.LayoutParams(
+                            LinearLayout.LayoutParams.MATCH_PARENT,
+                            16 // altezza spazio in pixel
+                        )
+                    }
+                    binding.teamMembersLayout.addView(space)
                 }
-                binding.teamMembersLayout.addView(space)
+            }
+            
+            // Aggiunge spazio maggiore tra i gruppi di settore
+            val sectorSpace = android.widget.Space(requireContext()).apply {
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    40 // altezza spazio in pixel
+                )
+            }
+            binding.teamMembersLayout.addView(sectorSpace)
+        }
+    }
+    
+    // Crea l'intestazione per un settore
+    private fun creaHeaderSettore(nomeSettore: String): TextView {
+        return TextView(requireContext()).apply {
+            text = nomeSettore
+            textSize = 20f
+            setTypeface(null, Typeface.BOLD)
+            setTextColor(ContextCompat.getColor(context, R.color.purple_500))
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                setMargins(16, 0, 16, 16)
+            }
+            setPadding(16, 8, 16, 8)
+            background = GradientDrawable().apply {
+                setColor(ContextCompat.getColor(context, android.R.color.darker_gray).let { 
+                    // Crea un colore più chiaro per lo sfondo
+                    android.graphics.Color.argb(30, 
+                        android.graphics.Color.red(it),
+                        android.graphics.Color.green(it),
+                        android.graphics.Color.blue(it))
+                })
+                cornerRadius = 8f
             }
         }
     }

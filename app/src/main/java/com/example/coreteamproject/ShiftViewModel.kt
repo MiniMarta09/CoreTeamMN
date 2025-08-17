@@ -15,7 +15,8 @@ data class Turno(
     val time: String = "",           // Orario del turno (es. "08:00 - 12:00")
     val description: String = "",    // Descrizione del turno
     val date: String = "",           // Data del turno (formato "yyyy-MM-dd")
-    val userId: String = ""          // ID utente associato al turno
+    val userId: String = "",         // ID utente associato al turno
+    val workMode: String = "presenza" // Modalità di lavoro: "presenza" o "smartworking"
 )
 
 class ShiftViewModel : ViewModel() {
@@ -111,7 +112,7 @@ class ShiftViewModel : ViewModel() {
     }
 
     // Salva un nuovo turno nel database per l'utente corrente
-    fun saveShift(title: String, time: String, description: String) {
+    fun saveShift(title: String, time: String, description: String, workMode: String = "presenza") {
         val currentUser = auth.currentUser
         if (currentUser == null) {
             _error.value = "Errore: utente non autenticato"
@@ -126,7 +127,8 @@ class ShiftViewModel : ViewModel() {
             "time" to time,
             "description" to description,
             "date" to currentDate,
-            "userId" to currentUser.uid
+            "userId" to currentUser.uid,
+            "workMode" to workMode
         )
 
         // Aggiunge il turno alla collezione "shifts" di Firestore
@@ -193,7 +195,8 @@ class ShiftViewModel : ViewModel() {
                             time = shift["time"] as? String ?: "",
                             description = shift["description"] as? String ?: "",
                             date = shift["date"] as? String ?: "",
-                            userId = shift["userId"] as? String ?: ""
+                            userId = shift["userId"] as? String ?: "",
+                            workMode = shift["workMode"] as? String ?: "presenza"
                         )
                         turniList.add(turno)
                     }
