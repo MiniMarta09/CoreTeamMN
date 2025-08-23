@@ -8,12 +8,13 @@ import com.google.firebase.firestore.FirebaseFirestore
 import java.text.SimpleDateFormat
 import java.util.*
 
-// Data class che rappresenta un singolo evento con id, titolo, orario e descrizione
+// Data class che rappresenta un singolo evento con id, titolo, orario, descrizione e flag privacy
 data class Evento(
     val id: String = "",         // ID univoco dell'evento (es. Firestore document ID)
     val title: String = "",      // Titolo dell'evento
     val time: String = "",       // Orario dell'evento (es. "14:30")
-    val description: String = "" // Descrizione aggiuntiva dell'evento
+    val description: String = "", // Descrizione aggiuntiva dell'evento
+    val isPrivate: Boolean = false // Indica se l'evento è privato e visibile solo all'utente che lo ha creato
 )
 
 // ViewModel per gestire la logica di eventi e comunicazione con Firebase
@@ -81,8 +82,8 @@ class EventViewModel : ViewModel() {
         caricaEventi()
     }
 
-    // Funzione per salvare un nuovo evento (titolo, orario, descrizione)
-    fun salvaEvento(title: String, time: String, description: String) {
+    // Funzione per salvare un nuovo evento (titolo, orario, descrizione, privacy)
+    fun salvaEvento(title: String, time: String, description: String, isPrivate: Boolean = false) {
         _isLoading.value = true // Indica che si sta caricando/salvando
 
         // Creo un ID temporaneo unico per l'evento prima del salvataggio su Firestore
@@ -93,7 +94,8 @@ class EventViewModel : ViewModel() {
             id = tempId,
             title = title,
             time = time,
-            description = description
+            description = description,
+            isPrivate = isPrivate
         )
 
         // Aggiungo il nuovo evento alla lista corrente in LiveData
@@ -110,7 +112,8 @@ class EventViewModel : ViewModel() {
             "description" to description,
             "date" to currentDate,
             "userId" to (auth.currentUser?.uid ?: "utente_sconosciuto"),
-            "timestamp" to Calendar.getInstance().timeInMillis
+            "timestamp" to Calendar.getInstance().timeInMillis,
+            "isPrivate" to isPrivate
         )
 
         // Salvo l'evento nella collezione "events" su Firestore
@@ -163,8 +166,8 @@ class EventViewModel : ViewModel() {
     }
 
     // Metodi legacy per aggiungere evento con sola stringa
-    fun addEvent(event: String) {
-        salvaEvento(event, "", "")
+    fun addEvent(event: String, isPrivate: Boolean = false) {
+        salvaEvento(event, "", "", isPrivate)
     }
 
     // Metodo legacy per rimuovere evento per indice
@@ -200,13 +203,20 @@ class EventViewModel : ViewModel() {
 
                     // Per ogni documento trovato creo un oggetto Evento e lo aggiungo alla lista
                     for (document in querySnapshot) {
-                        val evento = Evento(
-                            id = document.id,
-                            title = document.getString("title") ?: "",
-                            time = document.getString("time") ?: "",
-                            description = document.getString("description") ?: ""
-                        )
-                        eventiList.add(evento)
+                        val docUserId = document.getString("userId") ?: ""
+                        val isPrivate = document.getBoolean("isPrivate") ?: false
+                        
+                        // Filtro eventi privati: mostro solo quelli dell'utente corrente
+                        if (!isPrivate || (isPrivate && docUserId == userId)) {
+                            val evento = Evento(
+                                id = document.id,
+                                title = document.getString("title") ?: "",
+                                time = document.getString("time") ?: "",
+                                description = document.getString("description") ?: "",
+                                isPrivate = isPrivate
+                            )
+                            eventiList.add(evento)
+                        }
                     }
 
                     _eventi.value = eventiList          // Aggiorno LiveData con lista eventi

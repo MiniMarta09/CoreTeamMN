@@ -134,6 +134,16 @@ class EventFragment : Fragment() {
         val editDescription = EditText(requireContext())
         editDescription.hint = "Descrizione"
         layout.addView(editDescription)
+        
+        // Spazio prima del checkbox
+        val space = Space(requireContext())
+        space.minimumHeight = 20
+        layout.addView(space)
+
+        // Checkbox per privacy
+        val checkBoxPrivate = CheckBox(requireContext())
+        checkBoxPrivate.text = "Evento privato (visibile solo a te)"
+        layout.addView(checkBoxPrivate)
 
         AlertDialog.Builder(requireContext())
             .setTitle("Nuovo Evento")
@@ -142,9 +152,10 @@ class EventFragment : Fragment() {
                 val title = editTitle.text.toString().trim()
                 val time = editTime.text.toString().trim()
                 val description = editDescription.text.toString().trim()
+                val isPrivate = checkBoxPrivate.isChecked
                 //salva evento solo se ha titolo
                 if (title.isNotEmpty()) {
-                    viewModel.salvaEvento(title, time, description)
+                    viewModel.salvaEvento(title, time, description, isPrivate)
                 }
             }
             .setNegativeButton("Annulla", null)
@@ -156,22 +167,54 @@ class EventFragment : Fragment() {
         val eventLayout = LinearLayout(requireContext())
         eventLayout.orientation = LinearLayout.VERTICAL
         eventLayout.setPadding(32, 32, 32, 32)
-        eventLayout.setBackgroundColor(resources.getColor(android.R.color.holo_blue_light))
+        
+        // Colore di sfondo in base allo stato di privacy
+        if (evento.isPrivate) {
+            // Colore per eventi privati (un blu più scuro)
+            eventLayout.setBackgroundColor(resources.getColor(android.R.color.holo_blue_dark))
+        } else {
+            // Colore per eventi pubblici (blu chiaro come prima)
+            eventLayout.setBackgroundColor(resources.getColor(android.R.color.holo_blue_light))
+        }
 
-      // Margini per separare eventi
-       val layoutParams = LinearLayout.LayoutParams(
+        // Margini per separare eventi
+        val layoutParams = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
             LinearLayout.LayoutParams.WRAP_CONTENT
         )
         layoutParams.setMargins(0, 16, 0, 16)
         eventLayout.layoutParams = layoutParams
 
+        // Container orizzontale per titolo e icona privacy
+        val headerLayout = LinearLayout(requireContext())
+        headerLayout.orientation = LinearLayout.HORIZONTAL
+        headerLayout.layoutParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        )
+
         // Titolo evento
         val titleText = TextView(requireContext())
         titleText.text = evento.title
         titleText.textSize = 18f
         titleText.setTypeface(null, android.graphics.Typeface.BOLD)
-        eventLayout.addView(titleText)
+        titleText.layoutParams = LinearLayout.LayoutParams(
+            0,
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+            1.0f // peso per far espandere e riempire lo spazio disponibile
+        )
+        headerLayout.addView(titleText)
+        
+        // Indicatore di privacy (solo se privato)
+        if (evento.isPrivate) {
+            val privateText = TextView(requireContext())
+            privateText.text = "🔒" // Emoji lucchetto per indicare privato
+            privateText.textSize = 18f
+            headerLayout.addView(privateText)
+        }
+        
+        // Aggiungo l'header al layout principale
+        eventLayout.addView(headerLayout)
 
         // Ora evento
         if (evento.time.isNotEmpty()) {
@@ -187,6 +230,15 @@ class EventFragment : Fragment() {
             descText.text = evento.description
             descText.textSize = 14f
             eventLayout.addView(descText)
+        }
+        
+        // Indicatore testuale di privacy
+        if (evento.isPrivate) {
+            val privacyText = TextView(requireContext())
+            privacyText.text = "Evento privato"
+            privacyText.textSize = 12f
+            privacyText.setTypeface(null, android.graphics.Typeface.ITALIC)
+            eventLayout.addView(privacyText)
         }
 
        // Eliminazione dell'evento
