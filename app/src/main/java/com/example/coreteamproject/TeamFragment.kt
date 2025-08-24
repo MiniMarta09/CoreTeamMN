@@ -1,7 +1,9 @@
 package com.example.coreteamproject
 
+import android.content.Intent
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
+import android.net.Uri
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
@@ -9,7 +11,9 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
 import android.widget.FrameLayout
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
@@ -306,19 +310,64 @@ class TeamFragment : Fragment() {
             setTypeface(null, Typeface.BOLD)
         }
 
-        // TextView per l'email
-        val textEmail = TextView(requireContext()).apply {
+        // Layout orizzontale per email con icona
+        val emailLayout = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.HORIZONTAL
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
             ).apply {
                 setMargins(0, 0, 0, 8)
             }
+        }
+
+        // TextView per l'email
+        val textEmail = TextView(requireContext()).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                0,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                1.0f // peso per occupare lo spazio disponibile
+            )
             text = "Email: ${dipendente.email}"
             textSize = 14f
             setTextColor(ContextCompat.getColor(context, android.R.color.black))
             setTypeface(null, Typeface.BOLD)
         }
+
+        // ImageView per icona email
+        val emailIcon = ImageView(requireContext()).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                80, // larghezza in dp ulteriormente aumentata
+                80  // altezza in dp ulteriormente aumentata
+            ).apply {
+                // Centrare verticalmente l'icona
+                gravity = android.view.Gravity.CENTER_VERTICAL
+                // Aggiungere margine a sinistra per separarla dal testo
+                setMargins(16, 0, 0, 0)
+            }
+            setImageResource(R.drawable.ic_email)
+            contentDescription = "Invia email"
+            // Imposta colore dell'icona
+            setColorFilter(ContextCompat.getColor(context, R.color.purple_500))
+            // Imposta padding interno all'icona
+            setPadding(10, 10, 10, 10)
+
+            // Aggiungi il click listener per inviare l'email
+            setOnClickListener {
+                mostraDialogEmail(dipendente.email, dipendente.namelastname)
+            }
+            
+            // Imposta un effetto di ripple quando viene premuto
+            isClickable = true
+            isFocusable = true
+            val outValue = android.util.TypedValue()
+            context.theme.resolveAttribute(android.R.attr.selectableItemBackgroundBorderless, outValue, true)
+            setBackgroundResource(outValue.resourceId)
+        }
+
+        // Aggiunge i componenti al layout email
+        emailLayout.addView(textEmail)
+        emailLayout.addView(emailIcon)
 
         // TextView per la data di nascita
         val textDataNascita = TextView(requireContext()).apply {
@@ -335,7 +384,7 @@ class TeamFragment : Fragment() {
         // Aggiunge tutte le TextView al layout verticale
         linearLayout.addView(textNameLastName)
         linearLayout.addView(textSettore)
-        linearLayout.addView(textEmail)
+        linearLayout.addView(emailLayout) // Utilizziamo il layout con email e icona invece della sola TextView
         linearLayout.addView(textDataNascita)
 
         // Aggiunge il layout al CardView
@@ -346,5 +395,94 @@ class TeamFragment : Fragment() {
 
         // Ritorna la view completa pronta per essere inserita nel layout principale
         return frameLayout
+    }
+
+    // Mostra il dialog per la composizione dell'email
+    private fun mostraDialogEmail(emailAddress: String, name: String) {
+        // Creazione del dialog personalizzato
+        val dialogBuilder = android.app.AlertDialog.Builder(requireContext(), android.R.style.Theme_Material_Light_Dialog_NoActionBar)
+        val inflater = requireActivity().layoutInflater
+        val dialogView = inflater.inflate(R.layout.dialog_email, null)
+        dialogBuilder.setView(dialogView)
+        
+        // Ottieni riferimenti alle view nel dialog
+        val textViewDestinatario = dialogView.findViewById<TextView>(R.id.textViewDestinatario)
+        val editTextOggetto = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.editTextOggetto)
+        val editTextMessaggio = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.editTextMessaggio)
+        val buttonInvia = dialogView.findViewById<Button>(R.id.buttonInvia)
+        val buttonAnnulla = dialogView.findViewById<Button>(R.id.buttonAnnulla)
+        
+        // Imposta i valori iniziali
+        textViewDestinatario.text = emailAddress
+        editTextOggetto.setText("Messaggio per $name")
+        
+        // Crea il dialog
+        val alertDialog = dialogBuilder.create()
+        alertDialog.setCancelable(true)
+        
+        // Imposta il listener per il pulsante di invio
+        buttonInvia.setOnClickListener {
+            val oggetto = editTextOggetto.text.toString()
+            val messaggio = editTextMessaggio.text.toString()
+            
+            // Controlla che il messaggio non sia vuoto
+            if (messaggio.isBlank()) {
+                Toast.makeText(requireContext(), "Inserisci un messaggio", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            
+            // Invia l'email
+            inviaEmail(emailAddress, oggetto, messaggio)
+            
+            // Chiudi il dialog
+            alertDialog.dismiss()
+        }
+        
+        // Imposta il listener per il pulsante di annullamento
+        buttonAnnulla.setOnClickListener {
+            // Chiudi il dialog senza fare nulla
+            alertDialog.dismiss()
+        }
+        
+        // Mostra il dialog
+        alertDialog.show()
+        
+        // Imposta dimensione del dialog per occupare la maggior parte dello schermo
+        val window = alertDialog.window
+        window?.setLayout(android.view.ViewGroup.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.WRAP_CONTENT)
+    }
+    
+    // Metodo per inviare un'email al dipendente selezionato
+    private fun inviaEmail(emailAddress: String, oggetto: String, messaggio: String) {
+        try {
+            val intent = Intent(Intent.ACTION_SENDTO).apply {
+                data = Uri.parse("mailto:") // solo app email dovrebbero gestire questo
+                putExtra(Intent.EXTRA_EMAIL, arrayOf(emailAddress))
+                putExtra(Intent.EXTRA_SUBJECT, oggetto)
+                putExtra(Intent.EXTRA_TEXT, messaggio)
+            }
+            
+            if (intent.resolveActivity(requireActivity().packageManager) != null) {
+                startActivity(intent)
+                Toast.makeText(
+                    requireContext(),
+                    "Apertura client email...",
+                    Toast.LENGTH_SHORT
+                ).show()
+            } else {
+                Toast.makeText(
+                    requireContext(),
+                    "Nessuna app email trovata sul dispositivo",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        } catch (e: Exception) {
+            Toast.makeText(
+                requireContext(),
+                "Errore nell'apertura del client email: ${e.message}",
+                Toast.LENGTH_SHORT
+            ).show()
+            Log.e("TeamFragment", "Errore nell'apertura del client email", e)
+        }
     }
 }
