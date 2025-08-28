@@ -20,12 +20,16 @@
         <action
             android:id="@+id/action_homeFragment_to_teamFragment"
             app:destination="@id/teamFragment" />
+        <action
+            android:id="@+id/action_homeFragment_to_boardFragment"
+            app:destination="@id/boardFragment" />
     </fragment>
 
     <fragment
         android:id="@+id/profileFragment"
         android:name="com.example.coreteamproject.ProfileFragment"
-        android:label="ProfileFragment" />
+        android:label="ProfileFragment">
+    </fragment>
 
     <fragment
         android:id="@+id/diaryFragment"
@@ -38,10 +42,15 @@
     <fragment
         android:id="@+id/shiftFragment"
         android:name="com.example.coreteamproject.ShiftFragment"
-        android:label="ShiftFragment" />
+        android:label="ShiftFragment">
+    </fragment>
     <fragment
         android:id="@+id/teamFragment"
         android:name="com.example.coreteamproject.TeamFragment"
-        android:label="TeamFragment" />
-
+        android:label="TeamFragment">
+    </fragment>
+    <fragment
+        android:id="@+id/boardFragment"
+        android:name="com.example.coreteamproject.BoardFragment"
+        android:label="BoardFragment" />
 </navigation>

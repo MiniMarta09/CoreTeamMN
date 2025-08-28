@@ -17,6 +17,9 @@ import android.view.MenuItem
 import android.content.Intent
 import com.google.firebase.messaging.FirebaseMessaging
 import android.util.Log
+import androidx.navigation.fragment.NavHostFragment
+import androidx.navigation.ui.setupWithNavController
+import androidx.navigation.NavController
 
 // Classe principale dell'app, gestisce l'interfaccia principale
 class MainActivity : AppCompatActivity() {
@@ -42,64 +45,40 @@ class MainActivity : AppCompatActivity() {
         val toolbar = findViewById<com.google.android.material.appbar.MaterialToolbar>(R.id.toolbar)
         setSupportActionBar(toolbar)
 
-        // Imposta i colori personalizzati per la bottom navigation
-        setupBottomNavigation()
-
-        // Recupera l'utente loggato tramite FirebaseAuth
-        val user = FirebaseAuth.getInstance().currentUser
+        // Configurazione Navigation Component
+        val navHostFragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment
+        val navController = navHostFragment.navController
 
         // Trova il bottom navigation view nel layout
         val bottomNavigation = findViewById<BottomNavigationView>(R.id.bottom_navigation)
-
-        // Visualizza il fragment iniziale all'avvio dell'app
-        supportFragmentManager.beginTransaction()
-            .replace(R.id.fragment_container, HomeFragment())
-            .commit()
-
-        // Listener per la selezione delle voci del menu in basso
+        
+        // Gestione manuale della BottomNavigationView.
+        // L'approccio automatico con setupWithNavController non gestiva correttamente il back stack
+        // quando si tornava alla Home da altri fragment. Cliccare sull'icona Home non aveva effetto.
+        // Per risolvere, intercettiamo manualmente la selezione degli item.
         bottomNavigation.setOnItemSelectedListener { item ->
-            // Seleziona il fragment da visualizzare in base all'elemento toccato
-            val selectedFragment = when (item.itemId) {
-                R.id.nav_home -> HomeFragment()     // Selezionato "Home"
-                R.id.nav_profile -> ProfileFragment() // Selezionato "Profile"
-                else -> null
+            when (item.itemId) {
+                // Caso specifico per il pulsante Home.
+                R.id.homeFragment -> {
+                    // Usiamo popBackStack per tornare a Home. Questo metodo svuota lo stack di navigazione
+                    // fino a trovare l'istanza di homeFragment, garantendo che non si accumulino fragment superflui.
+                    // Il flag 'inclusive' a false indica che homeFragment stesso non deve essere rimosso.
+                    navController.popBackStack(R.id.homeFragment, false)
+                    true
+                }
+                // Per tutti gli altri item, usiamo la navigazione standard.
+                R.id.profileFragment -> {
+                    // navigate() aggiunge il fragment allo stack, che è il comportamento desiderato
+                    // per la navigazione verso sezioni diverse dalla Home.
+                    navController.navigate(R.id.profileFragment)
+                    true
+                }
+                else -> false
             }
-
-            selectedFragment?.let {
-                supportFragmentManager.beginTransaction()
-                    .replace(R.id.fragment_container, it)
-                    .commit()
-                true
-            } ?: false
         }
         
     }
 
-    // Metodo che imposta i colori delle icone e dei testi nella BottomNavigationView
-    private fun setupBottomNavigation() {
-        val bottomNavigation = findViewById<BottomNavigationView>(R.id.bottom_navigation)
-
-        // Definisce gli stati selezionato/non selezionato
-        val states = arrayOf(
-            intArrayOf(android.R.attr.state_checked),    // Quando l'elemento è selezionato
-            intArrayOf(-android.R.attr.state_checked)    // Quando NON è selezionato
-        )
-
-        // Colori delle icone in base allo stato
-        val iconColors = intArrayOf(
-            getColor(R.color.white), // Icona selezionata
-            getColor(R.color.white)  // Icona non selezionata
-        )
-
-        val textColors = intArrayOf(
-            getColor(R.color.white), // Testo selezionato
-            getColor(R.color.white)  // Testo non selezionato
-        )
-
-        // Applica i colori alle icone e ai testi del BottomNavigationView
-        bottomNavigation.itemIconTintList = ColorStateList(states, iconColors)
-        bottomNavigation.itemTextColor = ColorStateList(states, textColors)
-    }
 
     // Crea un canale notifiche per poter inviare notifiche
     private fun createNotificationChannel() {

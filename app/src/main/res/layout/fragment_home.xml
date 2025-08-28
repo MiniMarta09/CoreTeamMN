@@ -11,7 +11,7 @@
         android:id="@+id/textViewHome"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="50dp"
+        android:layout_marginTop="40dp"
         android:text="Benvenuti in CoreTeam!"
         android:textColor="@color/purple_500"
         android:textSize="27sp"
@@ -34,21 +34,21 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/textViewHome" />
 
-    <!-- Grglia 2x2 con tutti i bottoni nella home, circolari con icona in mezzo e scritta sotto -->
+    <!-- Griglia con tutti i bottoni nella home, circolari con icona in mezzo e scritta sotto -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/buttonGrid"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_marginStart="48dp"
-        android:layout_marginTop="65dp"
-        android:layout_marginEnd="48dp"
+        android:layout_marginStart="55dp"
+        android:layout_marginTop="45dp"
+        android:layout_marginEnd="55dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="1.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/textDescriptionHome"
-        app:layout_constraintVertical_bias="0.0">
+        app:layout_constraintTop_toBottomOf="@id/textDescriptionHome">
 
+        <!-- COLONNA SINISTRA -->
+        <!-- Diario - Prima riga sinistra -->
         <LinearLayout
             android:id="@+id/diaryLayout"
             android:layout_width="wrap_content"
@@ -60,25 +60,91 @@
 
             <Button
                 android:id="@+id/buttonDiary"
-                android:layout_width="120dp"
-                android:layout_height="120dp"
+                android:layout_width="90dp"
+                android:layout_height="90dp"
                 android:background="@drawable/round_button"
-                android:padding="25dp"
+                android:padding="18dp"
                 android:text=""
                 app:icon="@drawable/ic_bookhome"
-                app:iconSize="70dp"
+                app:iconSize="50dp"
                 app:iconTint="@color/white" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="6dp"
                 android:text="Diario"
                 android:textColor="@color/purple_500"
-                android:textSize="16sp"
+                android:textSize="14sp"
                 android:textStyle="bold" />
         </LinearLayout>
 
+        <!-- Turni - Seconda riga sinistra -->
+        <LinearLayout
+            android:id="@+id/shiftLayout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="40dp"
+            android:gravity="center"
+            android:orientation="vertical"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/diaryLayout">
+
+            <Button
+                android:id="@+id/buttonShift"
+                android:layout_width="90dp"
+                android:layout_height="90dp"
+                android:background="@drawable/round_button"
+                android:padding="18dp"
+                android:text=""
+                app:icon="@drawable/ic_shifthome"
+                app:iconSize="50dp"
+                app:iconTint="@color/white" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="Turni"
+                android:textColor="@color/purple_500"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- Bacheca - Terzo bottone sinistra -->
+        <LinearLayout
+            android:id="@+id/bachecaLayout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="40dp"
+            android:gravity="center"
+            android:orientation="vertical"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/shiftLayout">
+
+            <Button
+                android:id="@+id/buttonBacheca"
+                android:layout_width="90dp"
+                android:layout_height="90dp"
+                android:background="@drawable/round_button"
+                android:padding="18dp"
+                android:text=""
+                app:icon="@drawable/ic_board"
+                app:iconSize="50dp"
+                app:iconTint="@color/white" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="Bacheca"
+                android:textColor="@color/purple_500"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- COLONNA DESTRA -->
+        <!-- Eventi - Prima riga destra -->
         <LinearLayout
             android:id="@+id/eventLayout"
             android:layout_width="wrap_content"
@@ -90,61 +156,31 @@
 
             <Button
                 android:id="@+id/buttonEvent"
-                android:layout_width="120dp"
-                android:layout_height="120dp"
+                android:layout_width="90dp"
+                android:layout_height="90dp"
                 android:background="@drawable/round_button"
-                android:padding="25dp"
+                android:padding="18dp"
                 android:text=""
                 app:icon="@drawable/ic_calendarhome"
-                app:iconSize="70dp"
+                app:iconSize="50dp"
                 app:iconTint="@color/white" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="6dp"
                 android:text="Eventi"
                 android:textColor="@color/purple_500"
-                android:textSize="16sp"
+                android:textSize="14sp"
                 android:textStyle="bold" />
         </LinearLayout>
 
-        <LinearLayout
-            android:id="@+id/shiftLayout"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="60dp"
-            android:gravity="center"
-            android:orientation="vertical"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/diaryLayout">
-
-            <Button
-                android:id="@+id/buttonShift"
-                android:layout_width="120dp"
-                android:layout_height="120dp"
-                android:background="@drawable/round_button"
-                android:padding="25dp"
-                android:text=""
-                app:icon="@drawable/ic_shifthome"
-                app:iconSize="70dp"
-                app:iconTint="@color/white" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="Turni"
-                android:textColor="@color/purple_500"
-                android:textSize="16sp"
-                android:textStyle="bold" />
-        </LinearLayout>
-
+        <!-- Team - Seconda riga destra -->
         <LinearLayout
             android:id="@+id/teamLayout"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="60dp"
+            android:layout_marginTop="40dp"
             android:gravity="center"
             android:orientation="vertical"
             app:layout_constraintEnd_toEndOf="parent"
@@ -152,22 +188,22 @@
 
             <Button
                 android:id="@+id/buttonTeam"
-                android:layout_width="120dp"
-                android:layout_height="120dp"
+                android:layout_width="90dp"
+                android:layout_height="90dp"
                 android:background="@drawable/round_button"
-                android:padding="25dp"
+                android:padding="18dp"
                 android:text=""
                 app:icon="@drawable/ic_teamhome"
-                app:iconSize="70dp"
+                app:iconSize="50dp"
                 app:iconTint="@color/white" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="6dp"
                 android:text="Team"
                 android:textColor="@color/purple_500"
-                android:textSize="16sp"
+                android:textSize="14sp"
                 android:textStyle="bold" />
         </LinearLayout>
 
