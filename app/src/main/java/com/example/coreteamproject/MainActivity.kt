@@ -1,25 +1,18 @@
 package com.example.coreteamproject
 
 import android.os.Bundle
-import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.auth.FirebaseAuth
 import com.google.android.material.bottomnavigation.BottomNavigationView
-import android.content.res.ColorStateList
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.os.Build
 import android.Manifest
-import android.content.Context
 import androidx.core.app.ActivityCompat
 import android.view.Menu
 import android.view.MenuItem
 import android.content.Intent
-import com.google.firebase.messaging.FirebaseMessaging
-import android.util.Log
 import androidx.navigation.fragment.NavHostFragment
-import androidx.navigation.ui.setupWithNavController
-import androidx.navigation.NavController
 
 // Classe principale dell'app, gestisce l'interfaccia principale
 class MainActivity : AppCompatActivity() {

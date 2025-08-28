@@ -10,8 +10,6 @@ import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import com.example.coreteamproject.databinding.FragmentEventBinding
-import java.text.SimpleDateFormat
-import java.util.*
 
 // Fragment per gestire gli eventi
 class EventFragment : Fragment() {
