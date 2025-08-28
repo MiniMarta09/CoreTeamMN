@@ -72,7 +72,11 @@ class ShiftFragment : Fragment() {
                     showAddDialog()  // Mostra dialog per inserire nuovo turno
                 } else {
                     // Messaggio se non si possono aggiungere turni per date future
-                    Toast.makeText(requireContext(), "Non puoi inserire turni per date future", Toast.LENGTH_LONG).show()
+                    Toast.makeText(
+                        requireContext(),
+                        "Non puoi inserire turni per date future",
+                        Toast.LENGTH_LONG
+                    ).show()
                 }
             }
         }
@@ -120,9 +124,32 @@ class ShiftFragment : Fragment() {
     // Aggiorna la UI dei turni cancellando e ricreando le viste
     private fun updateShiftsUI(turni: List<Turno>) {
         binding.shiftsLayout.removeAllViews()
+        val inflater = LayoutInflater.from(requireContext())
         for (turno in turni) {
-            val shiftView = createShiftView(turno)
-            binding.shiftsLayout.addView(shiftView)
+            // inflata il nuovo layout della card usando il data binding
+            val cardBinding: com.example.coreteamproject.databinding.CardTurnoBinding =
+                com.example.coreteamproject.databinding.CardTurnoBinding.inflate(
+                    inflater,
+                    binding.shiftsLayout,
+                    false
+                )
+
+            // imposta la variabile 'turno' nel layout
+            cardBinding.turno = turno
+
+            // imposta il listener per l'eliminazione
+            cardBinding.root.setOnClickListener {
+                AlertDialog.Builder(requireContext())
+                    .setTitle("Elimina Turno")
+                    .setMessage("Sei sicuro di voler eliminare questo turno?")
+                    .setPositiveButton("Elimina") { _, _ ->
+                        viewModel.deleteShift(turno.id)
+                    }
+                    .setNegativeButton("Annulla", null)
+                    .show()
+            }
+
+            binding.shiftsLayout.addView(cardBinding.root)
         }
     }
 
@@ -165,12 +192,19 @@ class ShiftFragment : Fragment() {
         startRow.addView(tvStartTime)
 
         val startSpinner = Spinner(requireContext())
-        val startAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_dropdown_item, timeList)
+        val startAdapter =
+            ArrayAdapter(requireContext(), android.R.layout.simple_spinner_dropdown_item, timeList)
         startSpinner.adapter = startAdapter
         startSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+            override fun onItemSelected(
+                parent: AdapterView<*>?,
+                view: View?,
+                position: Int,
+                id: Long
+            ) {
                 selectedStartTime = timeList[position]
             }
+
             override fun onNothingSelected(parent: AdapterView<*>?) {}
         }
         startSpinner.layoutParams = LinearLayout.LayoutParams(
@@ -204,12 +238,19 @@ class ShiftFragment : Fragment() {
         endRow.addView(tvEndTime)
 
         val endSpinner = Spinner(requireContext())
-        val endAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_dropdown_item, timeList)
+        val endAdapter =
+            ArrayAdapter(requireContext(), android.R.layout.simple_spinner_dropdown_item, timeList)
         endSpinner.adapter = endAdapter
         endSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+            override fun onItemSelected(
+                parent: AdapterView<*>?,
+                view: View?,
+                position: Int,
+                id: Long
+            ) {
                 selectedEndTime = timeList[position]
             }
+
             override fun onNothingSelected(parent: AdapterView<*>?) {}
         }
         endSpinner.layoutParams = LinearLayout.LayoutParams(
@@ -225,41 +266,43 @@ class ShiftFragment : Fragment() {
 
         endRow.addView(endSpinner)
         layout.addView(endRow)
-        
+
         // Spaziatore per separare gli elementi
         val spacer2 = View(requireContext())
         spacer2.layoutParams = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT, 20
         )
         layout.addView(spacer2)
-        
+
         // Titolo per la sezione modalità di lavoro
         val tvWorkMode = TextView(requireContext())
         tvWorkMode.text = "Modalità di lavoro:"
         tvWorkMode.textSize = 16f
         layout.addView(tvWorkMode)
-        
+
         // RadioGroup per scegliere tra presenza e smartworking
         val radioGroup = RadioGroup(requireContext())
         radioGroup.orientation = RadioGroup.HORIZONTAL
-        
+
         val rbPresenza = RadioButton(requireContext())
         rbPresenza.id = View.generateViewId()
         rbPresenza.text = "Presenza"
         rbPresenza.isChecked = true // Selezionato di default
-        
+
         val rbSmartworking = RadioButton(requireContext())
         rbSmartworking.id = View.generateViewId()
         rbSmartworking.text = "Smartworking"
-        
+
         radioGroup.addView(rbPresenza)
-        
+
         // Spaziatore tra i radio button
         val radioSpacer = View(requireContext())
-        radioSpacer.layoutParams = LinearLayout.LayoutParams(20, 
-            LinearLayout.LayoutParams.MATCH_PARENT)
+        radioSpacer.layoutParams = LinearLayout.LayoutParams(
+            20,
+            LinearLayout.LayoutParams.MATCH_PARENT
+        )
         radioGroup.addView(radioSpacer)
-        
+
         radioGroup.addView(rbSmartworking)
         layout.addView(radioGroup)
 
@@ -270,79 +313,15 @@ class ShiftFragment : Fragment() {
             .setPositiveButton("Salva") { _, _ ->
                 val timeRange = "$selectedStartTime - $selectedEndTime"
                 val title = "Turno $selectedDate"
-                
+
                 // Determina la modalità di lavoro selezionata
                 val workMode = if (rbPresenza.isChecked) "presenza" else "smartworking"
-                
+
                 // Salva il nuovo turno tramite ViewModel
                 viewModel.saveShift(title, timeRange, "", workMode)
             }
             .setNegativeButton("Annulla", null)
             .show()
     }
-
-    // Crea dinamicamente una View che rappresenta un turno con titolo, orario e descrizione
-    private fun createShiftView(turno: Turno): View {
-        val shiftLayout = LinearLayout(requireContext())
-        shiftLayout.orientation = LinearLayout.VERTICAL
-        shiftLayout.setPadding(32, 32, 32, 32)
-        shiftLayout.setBackgroundColor(resources.getColor(android.R.color.holo_green_light))
-
-        val layoutParams = LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT,
-            LinearLayout.LayoutParams.WRAP_CONTENT
-        )
-        layoutParams.setMargins(0, 16, 0, 16)
-        shiftLayout.layoutParams = layoutParams
-
-        // Estrae le informazioni dal turno
-        val title = turno.title
-        val time = turno.time
-        val description = turno.description
-        val workMode = turno.workMode
-
-        // Titolo in grassetto e grande
-        val titleText = TextView(requireContext())
-        titleText.text = title
-        titleText.textSize = 18f
-        titleText.setTypeface(null, android.graphics.Typeface.BOLD)
-        shiftLayout.addView(titleText)
-
-        // Mostra orario se presente
-        if (time.isNotEmpty()) {
-            val timeText = TextView(requireContext())
-            timeText.text = "Orario: $time"
-            timeText.textSize = 14f
-            shiftLayout.addView(timeText)
-        }
-        
-        // Mostra modalità di lavoro
-        val workModeText = TextView(requireContext())
-        val formattedWorkMode = workMode.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
-        workModeText.text = "Modalità: $formattedWorkMode"
-        workModeText.textSize = 14f
-        shiftLayout.addView(workModeText)
-
-        // Mostra descrizione se presente
-        if (description.isNotEmpty()) {
-            val descText = TextView(requireContext())
-            descText.text = description
-            descText.textSize = 14f
-            shiftLayout.addView(descText)
-        }
-
-        // Aggiunge click listener per cancellare il turno con conferma dialog
-        shiftLayout.setOnClickListener {
-            AlertDialog.Builder(requireContext())
-                .setTitle("Elimina Turno")
-                .setMessage("Vuoi eliminare '$title'?")
-                .setPositiveButton("Elimina") { _, _ ->
-                    viewModel.deleteShift(turno.id)  // Chiamata per eliminare tramite ViewModel
-                }
-                .setNegativeButton("Annulla", null)
-                .show()
-        }
-
-        return shiftLayout
-    }
 }
+

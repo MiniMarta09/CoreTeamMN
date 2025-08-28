@@ -5,13 +5,12 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
-import androidx.cardview.widget.CardView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import com.example.coreteamproject.databinding.CardAnnuncioBinding
 import com.example.coreteamproject.databinding.FragmentBoardBinding
 import com.google.firebase.auth.FirebaseAuth
 import java.text.SimpleDateFormat
@@ -71,49 +70,39 @@ class BoardFragment : Fragment() {
             }
             binding.annunciContainer.addView(noAnnunciTextView)
         } else {
+            val inflater = LayoutInflater.from(context)
             annunci.forEach { annuncio ->
-                val cardView = createAnnuncioCard(annuncio)
+                val cardView = inflater.inflate(R.layout.card_annuncio, binding.annunciContainer, false)
+
+                val contentTextView = cardView.findViewById<TextView>(R.id.textViewContent)
+                val authorTextView = cardView.findViewById<TextView>(R.id.textViewAuthor)
+                val sectorTextView = cardView.findViewById<TextView>(R.id.textViewSector)
+                val dateTextView = cardView.findViewById<TextView>(R.id.textViewDate)
+                val editButton = cardView.findViewById<View>(R.id.buttonEdit)
+                val deleteButton = cardView.findViewById<View>(R.id.buttonDelete)
+                val actionsLayout = cardView.findViewById<View>(R.id.actions_layout)
+
+                contentTextView.text = annuncio.content
+                authorTextView.text =  "${annuncio.authorName}"
+                sectorTextView.text = annuncio.settore
+                dateTextView.text = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(annuncio.timestamp)
+
+                if (currentUserId == annuncio.userId) {
+                    actionsLayout.visibility = View.VISIBLE
+                } else {
+                    actionsLayout.visibility = View.GONE
+                }
+
+                editButton.setOnClickListener {
+                    showEditAnnuncioDialog(annuncio)
+                }
+                deleteButton.setOnClickListener {
+                    showDeleteConfirmationDialog(annuncio)
+                }
+
                 binding.annunciContainer.addView(cardView)
             }
         }
-    }
-
-    // Crea la CardView per un singolo annuncio
-    private fun createAnnuncioCard(annuncio: BoardViewModel.Annuncio): CardView {
-        // Infla il layout della card
-        val cardView = LayoutInflater.from(context).inflate(R.layout.card_annuncio, binding.annunciContainer, false) as CardView
-
-        // Trova le view all'interno della card
-        val authorTextView = cardView.findViewById<TextView>(R.id.textViewAuthor)
-        val sectorTextView = cardView.findViewById<TextView>(R.id.textViewSector)
-        val contentTextView = cardView.findViewById<TextView>(R.id.textViewContent)
-        val dateTextView = cardView.findViewById<TextView>(R.id.textViewDate)
-        val editButton = cardView.findViewById<Button>(R.id.buttonEdit)
-        val deleteButton = cardView.findViewById<Button>(R.id.buttonDelete)
-
-        // Popola la card con i dati
-        contentTextView.text = annuncio.content
-        dateTextView.text = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(annuncio.timestamp)
-
-        authorTextView.text = annuncio.authorName
-        sectorTextView.text = "Settore: ${annuncio.settore}"
-        sectorTextView.visibility = View.VISIBLE
-
-        // Mostra i bottoni solo all'autore
-        val isAuthor = currentUserId == annuncio.userId
-        editButton.visibility = if (isAuthor) View.VISIBLE else View.GONE
-        deleteButton.visibility = if (isAuthor) View.VISIBLE else View.GONE
-
-        if (isAuthor) {
-            editButton.setOnClickListener {
-                showEditAnnuncioDialog(annuncio)
-            }
-            deleteButton.setOnClickListener {
-                showDeleteConfirmationDialog(annuncio)
-            }
-        }
-
-        return cardView
     }
 
     // Mostra il dialog per creare o modificare un annuncio

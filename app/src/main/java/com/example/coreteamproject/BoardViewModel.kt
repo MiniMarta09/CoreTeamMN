@@ -22,7 +22,11 @@ class BoardViewModel : ViewModel() {
         val userId: String = "",
         val authorName: String = "",
         val settore: String = "",
-        val timestamp: Date = Date()
+        val timestamp: Date = Date(),
+        val likes: Long = 0,
+        val dislikes: Long = 0,
+        val likedBy: List<String> = emptyList(),
+        val dislikedBy: List<String> = emptyList()
     )
 
     // LiveData che espone la lista di annunci caricati da Firestore
@@ -104,5 +108,59 @@ class BoardViewModel : ViewModel() {
                 _error.value = "Errore durante l'eliminazione: ${e.message}"
                 Log.e("BoardViewModel", "Errore eliminazione annuncio", e)
             }
+    }
+
+    fun toggleLike(annuncioId: String) {
+        val userId = auth.currentUser?.uid ?: return
+        val docRef = db.collection("bacheca").document(annuncioId)
+
+        db.runTransaction { transaction ->
+            val snapshot = transaction.get(docRef)
+            val likedBy = snapshot.get("likedBy") as? MutableList<String> ?: mutableListOf()
+            val dislikedBy = snapshot.get("dislikedBy") as? MutableList<String> ?: mutableListOf()
+
+            if (likedBy.contains(userId)) {
+                likedBy.remove(userId)
+            } else {
+                likedBy.add(userId)
+                if (dislikedBy.contains(userId)) {
+                    dislikedBy.remove(userId)
+                }
+            }
+
+            transaction.update(docRef, "likedBy", likedBy)
+            transaction.update(docRef, "dislikedBy", dislikedBy)
+            transaction.update(docRef, "likes", likedBy.size.toLong())
+            transaction.update(docRef, "dislikes", dislikedBy.size.toLong())
+
+            null
+        }
+    }
+
+    fun toggleDislike(annuncioId: String) {
+        val userId = auth.currentUser?.uid ?: return
+        val docRef = db.collection("bacheca").document(annuncioId)
+
+        db.runTransaction { transaction ->
+            val snapshot = transaction.get(docRef)
+            val likedBy = snapshot.get("likedBy") as? MutableList<String> ?: mutableListOf()
+            val dislikedBy = snapshot.get("dislikedBy") as? MutableList<String> ?: mutableListOf()
+
+            if (dislikedBy.contains(userId)) {
+                dislikedBy.remove(userId)
+            } else {
+                dislikedBy.add(userId)
+                if (likedBy.contains(userId)) {
+                    likedBy.remove(userId)
+                }
+            }
+
+            transaction.update(docRef, "dislikedBy", dislikedBy)
+            transaction.update(docRef, "likedBy", likedBy)
+            transaction.update(docRef, "dislikes", dislikedBy.size.toLong())
+            transaction.update(docRef, "likes", likedBy.size.toLong())
+
+            null
+        }
     }
 }

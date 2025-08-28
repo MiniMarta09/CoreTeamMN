@@ -1,68 +1,122 @@
-<?xml version="1.0" encoding="utf-8"?>
-<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_margin="8dp"
-    app:cardCornerRadius="8dp"
+    app:cardCornerRadius="12dp"
     app:cardElevation="4dp">
 
-    <LinearLayout
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
         android:padding="16dp">
 
         <TextView
             android:id="@+id/textViewAuthor"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:textAppearance="@style/TextAppearance.MaterialComponents.Caption"
+            android:textColor="@color/purple_500"
             android:textStyle="bold"
-            android:textSize="15sp"
-            android:textColor="@color/purple_500"/>
+            android:textSize="16dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:text="Nome Autore" />
 
         <TextView
             android:id="@+id/textViewSector"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textSize="13sp"
-            android:textStyle="italic"/>
-
-        <TextView
-            android:id="@+id/textViewContent"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:textColor="@android:color/black"/>
+            android:textAppearance="@style/TextAppearance.MaterialComponents.Caption"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/textViewAuthor"
+            tools:text="Sviluppo" />
 
         <TextView
             android:id="@+id/textViewDate"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:textSize="12sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:text="24/05/2024" />
+
+        <TextView
+            android:id="@+id/textViewContent"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:textSize="12sp"/>
+            android:textAppearance="@style/TextAppearance.MaterialComponents.Body1"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/textViewSector"
+            tools:text="Contenuto dell'annuncio..." />
 
         <LinearLayout
-            android:layout_width="match_parent"
+            android:id="@+id/likes_layout"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:gravity="center_vertical"
             android:orientation="horizontal"
-            android:layout_marginTop="8dp">
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/textViewContent">
+
+            <ImageButton
+                android:id="@+id/buttonLike"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_like" />
+
+            <TextView
+                android:id="@+id/textViewLikesCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                tools:text="15" />
+
+            <ImageButton
+                android:id="@+id/buttonDislike"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_marginStart="16dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_dislike" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/actions_layout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:orientation="horizontal"
+            android:visibility="gone"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/likes_layout"
+            tools:visibility="visible">
 
             <Button
                 android:id="@+id/buttonEdit"
+                style="?attr/borderlessButtonStyle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Modifica"
-                android:textColor="@android:color/holo_green_light"
-                style="@style/Widget.MaterialComponents.Button.TextButton"/>
+                android:text="MODIFICA"
+                android:textAllCaps="false"
+                android:textColor="@color/green" />
 
             <Button
                 android:id="@+id/buttonDelete"
+                style="?attr/borderlessButtonStyle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Elimina"
-                android:textColor="@android:color/holo_red_dark"
-                style="@style/Widget.MaterialComponents.Button.TextButton"/>
+                android:layout_marginStart="8dp"
+                android:text="ELIMINA"
+                android:textAllCaps="false"
+                android:textColor="@color/red" />
         </LinearLayout>
-    </LinearLayout>
-</androidx.cardview.widget.CardView>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</com.google.android.material.card.MaterialCardView>

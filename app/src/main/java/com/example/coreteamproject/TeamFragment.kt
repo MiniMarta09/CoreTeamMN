@@ -25,13 +25,13 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import com.example.coreteamproject.databinding.FragmentTeamBinding
 
-// Fragment per la visualizzazione della lista di dipendenti
+// Visualizza la lista dei dipendenti
 class TeamFragment : Fragment() {
 
-    // Binding per il layout del fragment
+    // Binding per il layout
     private lateinit var binding: FragmentTeamBinding
 
-    // ViewModel per gestire i dati degli utenti
+    // ViewModel per i dati degli utenti
     private lateinit var viewModel: UsersViewModel
 
     override fun onCreateView(
@@ -39,54 +39,54 @@ class TeamFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        // Inizializza il data binding collegando layout e fragment
+        // Inizializza il data binding
         binding = DataBindingUtil.inflate(
             inflater, R.layout.fragment_team, container, false
         )
 
-        // Inizializza il ViewModel per il ciclo di vita di questo fragment
+        // Inizializza il ViewModel
         viewModel = ViewModelProvider(this)[UsersViewModel::class.java]
 
-        // Associa il ViewModel al binding per usarlo nel layout (es. binding.viewModel)
+        // Associa il ViewModel al binding
         binding.viewModel = viewModel
-        binding.lifecycleOwner = this // Lifecycle owner per LiveData
+        binding.lifecycleOwner = this // Imposta il lifecycle owner
 
-        // Imposta gli observer per aggiornare UI in base ai dati e stati del ViewModel
+        // Imposta gli observer
         setupObservers()
         
-        // Imposta il listener per la barra di ricerca
+        // Imposta la ricerca
         setupSearchListener()
 
-        // Richiede al ViewModel di caricare la lista dei dipendenti
+        // Carica i dipendenti
         viewModel.caricaDipendenti()
 
-        // Restituisce la root view del binding da visualizzare
+        // Restituisce la view
         return binding.root
     }
 
-    // Lista originale di dipendenti, usata per il filtraggio
+    // Lista completa dei dipendenti per il filtro
     private var listaDipendentiCompleta = listOf<Dipendente>()
     
     private fun setupObservers() {
-        // Osserva la lista dei dipendenti per aggiornarla nell'interfaccia
+        // Osserva i dipendenti e aggiorna la UI
         viewModel.dipendenti.observe(viewLifecycleOwner, Observer { dipendenti ->
             listaDipendentiCompleta = dipendenti
             mostraDipendenti(dipendenti)
         })
 
-        // Osserva lo stato di caricamento per mostrare o nascondere la progress bar
+        // Osserva lo stato di caricamento
         viewModel.isLoading.observe(viewLifecycleOwner, Observer { isLoading ->
             binding.progressBarTeam.visibility = if (isLoading) View.VISIBLE else View.GONE
         })
 
-        // Osserva se la lista è vuota per mostrare un messaggio appropriato
+        // Osserva se la lista è vuota
         viewModel.isEmpty.observe(viewLifecycleOwner, Observer { isEmpty ->
             if (isEmpty) {
                 mostraMessaggioVuoto()
             }
         })
 
-        // Osserva eventuali errori e li mostra come Toast, poi li resetta
+        // Osserva gli errori
         viewModel.error.observe(viewLifecycleOwner, Observer { error ->
             if (error != null) {
                 Log.e("TeamFragment", "Errore: $error")
@@ -96,7 +96,7 @@ class TeamFragment : Fragment() {
         })
     }
 
-    // Configura il listener per la barra di ricerca
+    // Configura la ricerca
     private fun setupSearchListener() {
         binding.searchEditText.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
@@ -108,28 +108,28 @@ class TeamFragment : Fragment() {
             }
             
             override fun afterTextChanged(s: Editable?) {
-                // Filtra la lista ogni volta che cambia il testo
+                // Filtra i dipendenti in base al testo
                 filtraDipendenti(s.toString())
             }
         })
     }
     
-    // Filtra i dipendenti in base al testo di ricerca
+    // Filtra i dipendenti
     private fun filtraDipendenti(query: String) {
         if (query.isEmpty()) {
-            // Se la query è vuota, mostra tutti i dipendenti
+            // Se la ricerca è vuota, mostra tutti
             mostraDipendenti(listaDipendentiCompleta)
             return
         }
         
         val queryLowerCase = query.lowercase().trim()
         
-        // Filtra i dipendenti il cui nome/cognome contiene la query
+        // Filtra per nome e cognome
         val dipendentiFiltrati = listaDipendentiCompleta.filter { dipendente ->
             dipendente.namelastname.lowercase().contains(queryLowerCase)
         }
         
-        // Mostra i dipendenti filtrati o un messaggio se non ce ne sono
+        // Mostra i risultati o un messaggio di vuoto
         if (dipendentiFiltrati.isEmpty()) {
             mostraMessaggioRicercaVuota(query)
         } else {
@@ -137,7 +137,7 @@ class TeamFragment : Fragment() {
         }
     }
     
-    // Mostra un messaggio quando la ricerca non produce risultati
+    // Messaggio per ricerca senza risultati
     private fun mostraMessaggioRicercaVuota(query: String) {
         binding.teamMembersLayout.removeAllViews()
         val textViewEmpty = TextView(requireContext()).apply {
@@ -149,62 +149,42 @@ class TeamFragment : Fragment() {
         binding.teamMembersLayout.addView(textViewEmpty)
     }
 
-    // Metodo che aggiorna la UI mostrando la lista di dipendenti raggruppati per settore
+    // Aggiorna la UI con i dipendenti raggruppati per settore
     private fun mostraDipendenti(dipendenti: List<Dipendente>) {
-        // Pulisce il layout container per evitare duplicati
+        // Pulisce il layout per evitare duplicati
         binding.teamMembersLayout.removeAllViews()
 
         if (dipendenti.isEmpty()) {
-            // Se non ci sono dipendenti, mostra messaggio di lista vuota
+            // Se la lista è vuota, mostra un messaggio
             mostraMessaggioVuoto()
             return
         }
 
         Log.d("TeamFragment", "Mostrando ${dipendenti.size} dipendenti:")
-        
+
         // Raggruppa i dipendenti per settore
         val dipendentiPerSettore = dipendenti.groupBy { it.settoreOccupazione.ifEmpty { "Non specificato" } }
-        
-        // Ordina i settori alfabeticamente
+
+        // Ordina i settori
         val settoriOrdinati = dipendentiPerSettore.keys.sorted()
-        
-        // Per ogni settore, visualizza intestazione e dipendenti
+
+        // Itera sui settori
         for (settore in settoriOrdinati) {
-            // Aggiungi intestazione del settore
+            // Aggiunge l'header del settore
             val headerSettore = creaHeaderSettore(settore)
             binding.teamMembersLayout.addView(headerSettore)
-            
-            // Aggiungi i dipendenti di questo settore
+
+            // Aggiunge le card dei dipendenti
             val dipendentiSettore = dipendentiPerSettore[settore] ?: emptyList()
-            for ((index, dipendente) in dipendentiSettore.withIndex()) {
+            for (dipendente in dipendentiSettore) {
                 Log.d("TeamFragment", "Dipendente: ${dipendente.namelastname}, Settore: ${dipendente.settoreOccupazione}")
                 val cardView = creaDipendenteCard(dipendente)
                 binding.teamMembersLayout.addView(cardView)
-
-                // Aggiunge uno spazio tra le card tranne dopo l'ultima del settore
-                if (index < dipendentiSettore.size - 1) {
-                    val space = android.widget.Space(requireContext()).apply {
-                        layoutParams = LinearLayout.LayoutParams(
-                            LinearLayout.LayoutParams.MATCH_PARENT,
-                            16 // altezza spazio in pixel
-                        )
-                    }
-                    binding.teamMembersLayout.addView(space)
-                }
             }
-            
-            // Aggiunge spazio maggiore tra i gruppi di settore
-            val sectorSpace = android.widget.Space(requireContext()).apply {
-                layoutParams = LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    40 // altezza spazio in pixel
-                )
-            }
-            binding.teamMembersLayout.addView(sectorSpace)
         }
     }
     
-    // Crea l'intestazione per un settore
+    // Crea l'header per un settore
     private fun creaHeaderSettore(nomeSettore: String): TextView {
         return TextView(requireContext()).apply {
             text = nomeSettore
@@ -231,7 +211,7 @@ class TeamFragment : Fragment() {
         }
     }
 
-    // Mostra un messaggio quando la lista dei dipendenti è vuota
+    // Messaggio per lista vuota
     private fun mostraMessaggioVuoto() {
         binding.teamMembersLayout.removeAllViews()
         val textViewEmpty = TextView(requireContext()).apply {
@@ -243,176 +223,46 @@ class TeamFragment : Fragment() {
         binding.teamMembersLayout.addView(textViewEmpty)
     }
 
-    // Crea una card personalizzata per visualizzare i dati di un singolo dipendente
-    private fun creaDipendenteCard(dipendente: Dipendente): FrameLayout {
-        // FrameLayout esterno con bordo nero arrotondato
-        val frameLayout = FrameLayout(requireContext()).apply {
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply {
-                setMargins(0, 0, 0, 24)
-            }
+    // Crea la card del dipendente dal layout XML
+    private fun creaDipendenteCard(dipendente: Dipendente): View {
+        val cardView = LayoutInflater.from(context).inflate(R.layout.card_dipendente, binding.teamMembersLayout, false)
 
-            // Background nero con angoli arrotondati
-            background = GradientDrawable().apply {
-                setColor(resources.getColor(android.R.color.black, null))
-                cornerRadius = 18f
-            }
+        // Trova le view nella card
+        val nameTextView = cardView.findViewById<TextView>(R.id.textViewName)
+        val sectorTextView = cardView.findViewById<TextView>(R.id.textViewSector)
+        val emailTextView = cardView.findViewById<TextView>(R.id.textViewEmail)
+        val birthDateTextView = cardView.findViewById<TextView>(R.id.textViewBirthDate)
 
-            setPadding(2, 2, 2, 2) // Padding per il bordo
+        // Popola la card con i dati
+        nameTextView.text = dipendente.namelastname
+        sectorTextView.text = dipendente.settoreOccupazione.ifEmpty { "Settore non specificato" }
+        emailTextView.text = dipendente.email
+        birthDateTextView.text = dipendente.dataNascita
+
+        // Click listener per inviare email
+        emailTextView.setOnClickListener {
+            mostraDialogEmail(dipendente.email, dipendente.namelastname)
         }
 
-        // CardView interna bianca con ombra e angoli arrotondati
-        val cardView = CardView(requireContext()).apply {
-            layoutParams = FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT,
-                FrameLayout.LayoutParams.WRAP_CONTENT
-            ).apply {
-                setMargins(3, 3, 3, 3)
-            }
-            radius = 12f
-            cardElevation = 6f
-            setCardBackgroundColor(ContextCompat.getColor(context, R.color.white))
-        }
-
-        // LinearLayout verticale per contenere i testi
-        val linearLayout = LinearLayout(requireContext()).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(32, 24, 32, 24)
-        }
-
-        // TextView per il nome e cognome
-        val textNameLastName = TextView(requireContext()).apply {
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply {
-                setMargins(0, 0, 0, 16)
-            }
-            text = if (dipendente.namelastname.isNotEmpty()) dipendente.namelastname else "Nome non disponibile"
-            textSize = 18f
-            setTextColor(ContextCompat.getColor(context, R.color.purple_500))
-            setTypeface(null, Typeface.BOLD)
-        }
-
-        // TextView per il settore di occupazione
-        val textSettore = TextView(requireContext()).apply {
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply {
-                setMargins(0, 0, 0, 8)
-            }
-            text = "Settore: ${dipendente.settoreOccupazione}"
-            textSize = 14f
-            setTextColor(ContextCompat.getColor(context, android.R.color.black))
-            setTypeface(null, Typeface.BOLD)
-        }
-
-        // Layout orizzontale per email con icona
-        val emailLayout = LinearLayout(requireContext()).apply {
-            orientation = LinearLayout.HORIZONTAL
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply {
-                setMargins(0, 0, 0, 8)
-            }
-        }
-
-        // TextView per l'email
-        val textEmail = TextView(requireContext()).apply {
-            layoutParams = LinearLayout.LayoutParams(
-                0,
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                1.0f // peso per occupare lo spazio disponibile
-            )
-            text = "Email: ${dipendente.email}"
-            textSize = 14f
-            setTextColor(ContextCompat.getColor(context, android.R.color.black))
-            setTypeface(null, Typeface.BOLD)
-        }
-
-        // ImageView per icona email
-        val emailIcon = ImageView(requireContext()).apply {
-            layoutParams = LinearLayout.LayoutParams(
-                80, // larghezza in dp ulteriormente aumentata
-                80  // altezza in dp ulteriormente aumentata
-            ).apply {
-                // Centrare verticalmente l'icona
-                gravity = android.view.Gravity.CENTER_VERTICAL
-                // Aggiungere margine a sinistra per separarla dal testo
-                setMargins(16, 0, 0, 0)
-            }
-            setImageResource(R.drawable.ic_email)
-            contentDescription = "Invia email"
-            // Imposta colore dell'icona
-            setColorFilter(ContextCompat.getColor(context, R.color.purple_500))
-            // Imposta padding interno all'icona
-            setPadding(10, 10, 10, 10)
-
-            // Aggiungi il click listener per inviare l'email
-            setOnClickListener {
-                mostraDialogEmail(dipendente.email, dipendente.namelastname)
-            }
-            
-            // Imposta un effetto di ripple quando viene premuto
-            isClickable = true
-            isFocusable = true
-            val outValue = android.util.TypedValue()
-            context.theme.resolveAttribute(android.R.attr.selectableItemBackgroundBorderless, outValue, true)
-            setBackgroundResource(outValue.resourceId)
-        }
-
-        // Aggiunge i componenti al layout email
-        emailLayout.addView(textEmail)
-        emailLayout.addView(emailIcon)
-
-        // TextView per la data di nascita
-        val textDataNascita = TextView(requireContext()).apply {
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-            text = "Data di nascita: ${dipendente.dataNascita}"
-            textSize = 14f
-            setTextColor(ContextCompat.getColor(context, android.R.color.black))
-            setTypeface(null, Typeface.BOLD)
-        }
-
-        // Aggiunge tutte le TextView al layout verticale
-        linearLayout.addView(textNameLastName)
-        linearLayout.addView(textSettore)
-        linearLayout.addView(emailLayout) // Utilizziamo il layout con email e icona invece della sola TextView
-        linearLayout.addView(textDataNascita)
-
-        // Aggiunge il layout al CardView
-        cardView.addView(linearLayout)
-
-        // Aggiunge il CardView al FrameLayout per creare l'effetto bordo nero arrotondato
-        frameLayout.addView(cardView)
-
-        // Ritorna la view completa pronta per essere inserita nel layout principale
-        return frameLayout
+        return cardView
     }
 
-    // Mostra il dialog per la composizione dell'email
+    // Mostra il dialog per l'email
     private fun mostraDialogEmail(emailAddress: String, name: String) {
-        // Creazione del dialog personalizzato
+        // Crea il dialog
         val dialogBuilder = android.app.AlertDialog.Builder(requireContext(), android.R.style.Theme_Material_Light_Dialog_NoActionBar)
         val inflater = requireActivity().layoutInflater
         val dialogView = inflater.inflate(R.layout.dialog_email, null)
         dialogBuilder.setView(dialogView)
         
-        // Ottieni riferimenti alle view nel dialog
+        // Ottieni le view dal dialog
         val textViewDestinatario = dialogView.findViewById<TextView>(R.id.textViewDestinatario)
         val editTextOggetto = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.editTextOggetto)
         val editTextMessaggio = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.editTextMessaggio)
         val buttonInvia = dialogView.findViewById<Button>(R.id.buttonInvia)
         val buttonAnnulla = dialogView.findViewById<Button>(R.id.buttonAnnulla)
         
-        // Imposta i valori iniziali
+        // Imposta i dati iniziali
         textViewDestinatario.text = emailAddress
         editTextOggetto.setText("Messaggio per $name")
         
@@ -420,43 +270,43 @@ class TeamFragment : Fragment() {
         val alertDialog = dialogBuilder.create()
         alertDialog.setCancelable(true)
         
-        // Imposta il listener per il pulsante di invio
+        // Listener per il pulsante invia
         buttonInvia.setOnClickListener {
             val oggetto = editTextOggetto.text.toString()
             val messaggio = editTextMessaggio.text.toString()
             
-            // Controlla che il messaggio non sia vuoto
+            // Controlla se il messaggio è vuoto
             if (messaggio.isBlank()) {
                 Toast.makeText(requireContext(), "Inserisci un messaggio", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
             
-            // Invia l'email
+            // Invia email
             inviaEmail(emailAddress, oggetto, messaggio)
             
-            // Chiudi il dialog
+            // Chiude il dialog
             alertDialog.dismiss()
         }
         
-        // Imposta il listener per il pulsante di annullamento
+        // Listener per il pulsante annulla
         buttonAnnulla.setOnClickListener {
-            // Chiudi il dialog senza fare nulla
+            // Chiude il dialog senza fare nulla
             alertDialog.dismiss()
         }
         
         // Mostra il dialog
         alertDialog.show()
         
-        // Imposta dimensione del dialog per occupare la maggior parte dello schermo
+        // Imposta la dimensione del dialog
         val window = alertDialog.window
         window?.setLayout(android.view.ViewGroup.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.WRAP_CONTENT)
     }
     
-    // Metodo per inviare un'email al dipendente selezionato
+    // Invia un'email al dipendente
     private fun inviaEmail(emailAddress: String, oggetto: String, messaggio: String) {
         try {
             val intent = Intent(Intent.ACTION_SENDTO).apply {
-                data = Uri.parse("mailto:") // solo app email dovrebbero gestire questo
+                data = Uri.parse("mailto:") // solo le app di email devono gestire questo intent
                 putExtra(Intent.EXTRA_EMAIL, arrayOf(emailAddress))
                 putExtra(Intent.EXTRA_SUBJECT, oggetto)
                 putExtra(Intent.EXTRA_TEXT, messaggio)

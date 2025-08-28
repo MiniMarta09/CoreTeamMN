@@ -4,4 +4,12 @@
     <color name="white">#FFFFFFFF</color>
     <color name="purple_500">#552586 </color> // tutti i dettagli viola
     <color name="background_cream">#F5F1E8</color> // sfondo app
+    <color name="dark_gray">#616161</color>
+    <color name="gray">#808080</color>
+    <color name="public_event_background">#E0F7FA</color> <!-- sfondo per eventi pubblici -->
+    <color name="private_event_background">#B0BEC5</color> <!-- sfondo per eventi privati -->
+    <color name="turno_presenza_background">#C8E6C9</color> <!-- sfondo per turni in presenza -->
+    <color name="turno_smartworking_background">#FFCC80</color> <!-- sfondo per turni in smartworking -->
+    <color name="green">#4CAF50</color>
+    <color name="red">#F44336</color>
 </resources>

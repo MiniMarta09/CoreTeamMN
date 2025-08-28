@@ -1,21 +1,19 @@
 package com.example.coreteamproject
 
-import android.graphics.Typeface
-import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.*
-import androidx.cardview.widget.CardView
-import androidx.core.content.ContextCompat
+import android.widget.SeekBar
+import android.widget.TextView
+import android.widget.Toast
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.Observer
 import com.example.coreteamproject.databinding.FragmentDiaryBinding
 
-//Fragment per gestire il diario
+// Fragment per gestire il diario
 class DiaryFragment : Fragment() {
 
     // Variabili per databinding e viewmodel
@@ -42,15 +40,15 @@ class DiaryFragment : Fragment() {
         // Configura gli observer
         setupObservers()
 
-        // Imposta il listener per i pulsanti
+        // Imposta i listener per i pulsanti
         setupListeners()
 
         return binding.root
     }
 
-    // Configura gli observer per valutare i cambiamenti del viewmodel
+    // Configura gli observer per i LiveData del ViewModel
     private fun setupObservers() {
-        // Observer per le valutazioni
+        // Observer per la lista di valutazioni
         viewModel.valutazioni.observe(viewLifecycleOwner, Observer { valutazioni ->
             aggiornaListaValutazioni(valutazioni)
         })
@@ -135,134 +133,56 @@ class DiaryFragment : Fragment() {
         })
     }
 
-    // Aggiornamento valutazioni
+    // Aggiorna la UI con la lista di valutazioni
     private fun aggiornaListaValutazioni(valutazioni: List<ValutazioneMensile>) {
         binding.recyclerValutazioni.removeAllViews()
-
-        for ((index, valutazione) in valutazioni.withIndex()) {
-            aggiungiValutazioneAllaLista(valutazione)
-
-            // Aggiungi spazio tra le card (tranne dopo l'ultima)
-            if (index < valutazioni.size - 1) {
-                val space = Space(requireContext()).apply {
-                    layoutParams = LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT,
-                        24 // Spazio visivo tra una valutazione e l'altra
-                    )
-                }
-                binding.recyclerValutazioni.addView(space)
+        if (valutazioni.isEmpty()) {
+            mostraMessaggioVuoto()
+        } else {
+            valutazioni.forEach { valutazione ->
+                val card = creaValutazioneCard(valutazione)
+                binding.recyclerValutazioni.addView(card)
             }
         }
     }
 
-    // Messaggio se non ci sono valutazioni
+    // Mostra un messaggio se la lista di valutazioni è vuota
     private fun mostraMessaggioVuoto() {
         binding.recyclerValutazioni.removeAllViews()
-        val textNoData = TextView(requireContext())
-        textNoData.text = "Nessuna valutazione trovata. Aggiungi la prima!"
-        textNoData.textSize = 16f
-        textNoData.setPadding(16, 16, 16, 16)
+        val textNoData = TextView(requireContext()).apply {
+            text = "Nessuna valutazione trovata. Aggiungi la prima!"
+            textSize = 16f
+            setPadding(16, 16, 16, 16)
+            gravity = android.view.Gravity.CENTER_HORIZONTAL
+        }
         binding.recyclerValutazioni.addView(textNoData)
     }
 
-    // Aggiunta valutazione alla lista
-    private fun aggiungiValutazioneAllaLista(valutazione: ValutazioneMensile) {
-        // Creiamo il FrameLayout esterno che farà da bordo nero
-        val frameLayout = FrameLayout(requireContext()).apply {
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply {
-                setMargins(3, 3, 3, 3)
-            }
+    // Crea una singola card di valutazione inflatando il layout XML
+    private fun creaValutazioneCard(valutazione: ValutazioneMensile): View {
+        val cardView = layoutInflater.inflate(R.layout.card_valutazione, binding.recyclerValutazioni, false)
 
-            background = GradientDrawable().apply {
-                setColor(resources.getColor(android.R.color.black, null))
-                cornerRadius = 18f
-            }
+        // Trova le view nel layout della card
+        val meseAnnoTextView = cardView.findViewById<TextView>(R.id.textViewMeseAnno)
+        val stressTextView = cardView.findViewById<TextView>(R.id.textViewStress)
+        val colleghiTextView = cardView.findViewById<TextView>(R.id.textViewColleghi)
+        val soddisfazioneTextView = cardView.findViewById<TextView>(R.id.textViewSoddisfazione)
+        val commentoTextView = cardView.findViewById<TextView>(R.id.textViewCommento)
 
-            setPadding(2, 2, 2, 2)
-        }
+        // Popola le view con i dati della valutazione
+        meseAnnoTextView.text = valutazione.meseAnno
+        stressTextView.text = "Stress: ${valutazione.stress}/5"
+        colleghiTextView.text = "Rapporto Colleghi: ${valutazione.rapportoColleghi}/5"
+        soddisfazioneTextView.text = "Soddisfazione: ${valutazione.soddisfazioneLavoro}/5"
 
-        // Creiamo la CardView interna che ospiterà i contenuti
-        val cardView = CardView(requireContext()).apply {
-            layoutParams = FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT,
-                FrameLayout.LayoutParams.WRAP_CONTENT
-            ).apply {
-                setMargins(3, 3, 3, 3)
-            }
-            radius = 12f
-            cardElevation = 6f
-            setCardBackgroundColor(ContextCompat.getColor(context, R.color.white))
-        }
-
-        // Crea il container principale all'interno della CardView
-        val containerLayout = LinearLayout(requireContext()).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(32, 24, 32, 24)
-        }
-
-        // Titolo con mese/anno
-        val textMeseAnno = TextView(requireContext()).apply {
-            text = "Mese: ${valutazione.meseAnno}"
-            textSize = 18f
-            setTypeface(null, Typeface.BOLD)
-            setTextColor(ContextCompat.getColor(context, R.color.purple_500))
-            setPadding(0, 0, 0, 16)
-        }
-
-        // Stress
-        val textStress = TextView(requireContext()).apply {
-            text = "Stress: ${valutazione.stress}/5"
-            textSize = 14f
-            setTypeface(null, Typeface.BOLD)
-            setTextColor(ContextCompat.getColor(context, android.R.color.black))
-            setPadding(0, 0, 0, 8)
-        }
-
-        // Colleghi
-        val textColleghi = TextView(requireContext()).apply {
-            text = "Colleghi: ${valutazione.rapportoColleghi}/5"
-            textSize = 14f
-            setTypeface(null, Typeface.BOLD)
-            setTextColor(ContextCompat.getColor(context, android.R.color.black))
-            setPadding(0, 0, 0, 8)
-        }
-
-        // Soddisfazione
-        val textSoddisfazione = TextView(requireContext()).apply {
-            text = "Soddisfazione: ${valutazione.soddisfazioneLavoro}/5"
-            textSize = 14f
-            setTypeface(null, Typeface.BOLD)
-            setTextColor(ContextCompat.getColor(context, android.R.color.black))
-            setPadding(0, 0, 0, 8)
-        }
-
-        // Commento
+        // Mostra il commento solo se non è vuoto
         if (valutazione.commento.isNotEmpty()) {
-            val textCommento = TextView(requireContext()).apply {
-                text = "Commento: ${valutazione.commento}"
-                textSize = 14f
-                setTypeface(null, Typeface.ITALIC)
-                setTextColor(ContextCompat.getColor(context, android.R.color.black))
-            }
-            containerLayout.addView(textCommento)
+            commentoTextView.text = valutazione.commento
+            commentoTextView.visibility = View.VISIBLE
+        } else {
+            commentoTextView.visibility = View.GONE
         }
 
-        // Aggiungi tutti i TextView al container
-        containerLayout.addView(textMeseAnno)
-        containerLayout.addView(textStress)
-        containerLayout.addView(textColleghi)
-        containerLayout.addView(textSoddisfazione)
-
-        // Aggiunge il container alla CardView
-        cardView.addView(containerLayout)
-
-        // Aggiungi la CardView al FrameLayout
-        frameLayout.addView(cardView)
-
-        // Aggiungi il FrameLayout alla vista
-        binding.recyclerValutazioni.addView(frameLayout)
+        return cardView
     }
 }

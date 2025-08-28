@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- layout per una singola card turno con data binding -->
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- sezione data per il binding con il viewmodel -->
+    <data>
+        <variable
+            name="turno"
+            type="com.example.coreteamproject.Turno" />
+        <import type="android.view.View"/>
+    </data>
+
+    <androidx.cardview.widget.CardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="8dp"
+        app:cardCornerRadius="8dp"
+        app:cardElevation="4dp"
+        app:cardBackgroundColor="@{turno.workMode.equals(`presenza`) ? @color/turno_presenza_background : @color/turno_smartworking_background}">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="16dp">
+
+            <!-- orario del turno -->
+            <TextView
+                android:id="@+id/textViewShiftTime"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@{turno.time}"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:textColor="@android:color/black"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                tools:text="09:00 - 18:00" />
+
+            <!-- icona modalità di lavoro -->
+            <ImageView
+                android:id="@+id/imageViewWorkModeIcon"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@{turno.workMode.equals(`presenza`) ? @drawable/ic_laptop : @drawable/ic_home}"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <!-- testo modalità di lavoro -->
+            <TextView
+                android:id="@+id/textViewWorkMode"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@{turno.workMode.substring(0,1).toUpperCase() + turno.workMode.substring(1)}"
+                android:layout_marginTop="8dp"
+                android:textColor="@android:color/black"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/textViewShiftTime"
+                tools:text="Presenza" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </androidx.cardview.widget.CardView>
+</layout>

@@ -95,10 +95,28 @@ class EventFragment : Fragment() {
     // Aggioranamento visualizzazione eventi
     private fun updateEventsUI(eventi: List<Evento>) {
         binding.eventsLayout.removeAllViews()
-        
+
         for (evento in eventi) {
-            val eventView = createEventView(evento)
-            binding.eventsLayout.addView(eventView)
+            // inflata il layout della card usando il data binding
+            val cardBinding = com.example.coreteamproject.databinding.CardEventoBinding.inflate(layoutInflater, binding.eventsLayout, false)
+
+            // imposta la variabile evento nel layout della card
+            cardBinding.evento = evento
+
+            // imposta il listener per l'eliminazione
+            cardBinding.root.setOnClickListener {
+                AlertDialog.Builder(requireContext())
+                    .setTitle("Elimina Evento")
+                    .setMessage("Vuoi eliminare '${evento.title}'?")
+                    .setPositiveButton("Elimina") { _, _ ->
+                        viewModel.eliminaEvento(evento.id)
+                    }
+                    .setNegativeButton("Annulla", null)
+                    .show()
+            }
+
+            // aggiunge la card al layout
+            binding.eventsLayout.addView(cardBinding.root)
         }
     }
     
@@ -158,99 +176,5 @@ class EventFragment : Fragment() {
             }
             .setNegativeButton("Annulla", null)
             .show()
-    }
-
-    // Crea visualizzazione evento
-    private fun createEventView(evento: Evento): View {
-        val eventLayout = LinearLayout(requireContext())
-        eventLayout.orientation = LinearLayout.VERTICAL
-        eventLayout.setPadding(32, 32, 32, 32)
-        
-        // Colore di sfondo in base allo stato di privacy
-        if (evento.isPrivate) {
-            // Colore per eventi privati (un blu più scuro)
-            eventLayout.setBackgroundColor(resources.getColor(android.R.color.holo_blue_dark))
-        } else {
-            // Colore per eventi pubblici (blu chiaro come prima)
-            eventLayout.setBackgroundColor(resources.getColor(android.R.color.holo_blue_light))
-        }
-
-        // Margini per separare eventi
-        val layoutParams = LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT,
-            LinearLayout.LayoutParams.WRAP_CONTENT
-        )
-        layoutParams.setMargins(0, 16, 0, 16)
-        eventLayout.layoutParams = layoutParams
-
-        // Container orizzontale per titolo e icona privacy
-        val headerLayout = LinearLayout(requireContext())
-        headerLayout.orientation = LinearLayout.HORIZONTAL
-        headerLayout.layoutParams = LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT,
-            LinearLayout.LayoutParams.WRAP_CONTENT
-        )
-
-        // Titolo evento
-        val titleText = TextView(requireContext())
-        titleText.text = evento.title
-        titleText.textSize = 18f
-        titleText.setTypeface(null, android.graphics.Typeface.BOLD)
-        titleText.layoutParams = LinearLayout.LayoutParams(
-            0,
-            LinearLayout.LayoutParams.WRAP_CONTENT,
-            1.0f // peso per far espandere e riempire lo spazio disponibile
-        )
-        headerLayout.addView(titleText)
-        
-        // Indicatore di privacy (solo se privato)
-        if (evento.isPrivate) {
-            val privateText = TextView(requireContext())
-            privateText.text = "🔒" // Emoji lucchetto per indicare privato
-            privateText.textSize = 18f
-            headerLayout.addView(privateText)
-        }
-        
-        // Aggiungo l'header al layout principale
-        eventLayout.addView(headerLayout)
-
-        // Ora evento
-        if (evento.time.isNotEmpty()) {
-            val timeText = TextView(requireContext())
-            timeText.text = "Ora: ${evento.time}"
-            timeText.textSize = 14f
-            eventLayout.addView(timeText)
-        }
-
-        // Descrizione evento
-        if (evento.description.isNotEmpty()) {
-            val descText = TextView(requireContext())
-            descText.text = evento.description
-            descText.textSize = 14f
-            eventLayout.addView(descText)
-        }
-        
-        // Indicatore testuale di privacy
-        if (evento.isPrivate) {
-            val privacyText = TextView(requireContext())
-            privacyText.text = "Evento privato"
-            privacyText.textSize = 12f
-            privacyText.setTypeface(null, android.graphics.Typeface.ITALIC)
-            eventLayout.addView(privacyText)
-        }
-
-       // Eliminazione dell'evento
-        eventLayout.setOnClickListener {
-            AlertDialog.Builder(requireContext())
-                .setTitle("Elimina Evento")
-                .setMessage("Vuoi eliminare '${evento.title}'?")
-                .setPositiveButton("Elimina") { _, _ ->
-                    viewModel.eliminaEvento(evento.id)
-                }
-                .setNegativeButton("Annulla", null)
-                .show()
-        }
-
-        return eventLayout
     }
 }
