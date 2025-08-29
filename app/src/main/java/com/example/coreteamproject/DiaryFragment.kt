@@ -12,6 +12,9 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.Observer
 import com.example.coreteamproject.databinding.FragmentDiaryBinding
+import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.google.android.material.textfield.TextInputEditText
+import android.widget.Button
 
 // Fragment per gestire il diario
 class DiaryFragment : Fragment() {
@@ -77,60 +80,41 @@ class DiaryFragment : Fragment() {
         })
     }
 
-    // Configura tutti i listener per i controlli dell'interfaccia
+    // Configura il listener per il pulsante di aggiunta
     private fun setupListeners() {
-        // Pulsante + per aggiungere valutazione
         binding.btnAggiungiValutazione.setOnClickListener {
-            viewModel.mostraFormValutazione()
+            showValutazioneDialog()
         }
+    }
 
-        // Pulsante Salva
-        binding.btnSalva.setOnClickListener {
-            val stress = binding.seekbarStress.progress + 1
-            val colleghi = binding.seekbarColleghi.progress + 1
-            val soddisfazione = binding.seekbarSoddisfazione.progress + 1
-            val commento = binding.editCommento.text.toString()
+    // Mostra il dialog per inserire una nuova valutazione
+    private fun showValutazioneDialog() {
+        val dialog = BottomSheetDialog(requireContext())
+        val view = layoutInflater.inflate(R.layout.dialog_diary_entry, null)
+        dialog.setContentView(view)
+
+        val seekbarStress = view.findViewById<SeekBar>(R.id.seekbar_stress)
+        val seekbarColleghi = view.findViewById<SeekBar>(R.id.seekbar_colleghi)
+        val seekbarSoddisfazione = view.findViewById<SeekBar>(R.id.seekbar_soddisfazione)
+        val editCommento = view.findViewById<TextInputEditText>(R.id.edit_commento)
+        val btnSalva = view.findViewById<Button>(R.id.btn_salva)
+        val btnAnnulla = view.findViewById<Button>(R.id.btn_annulla)
+
+        btnSalva.setOnClickListener {
+            val stress = seekbarStress.progress + 1
+            val colleghi = seekbarColleghi.progress + 1
+            val soddisfazione = seekbarSoddisfazione.progress + 1
+            val commento = editCommento.text.toString()
 
             viewModel.salvaValutazione(stress, colleghi, soddisfazione, commento)
+            dialog.dismiss()
         }
 
-        // Pulsante Annulla
-        binding.btnAnnulla.setOnClickListener {
-            viewModel.nascondiFormValutazione()
+        btnAnnulla.setOnClickListener {
+            dialog.dismiss()
         }
 
-        // Listener per i SeekBarStress
-        binding.seekbarStress.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                binding.textStressValue.text = "${progress + 1}"
-                viewModel.updateStressValue(progress + 1)
-            }
-
-            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
-            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
-        })
-
-        // Listener per i SeekBarColleghi
-        binding.seekbarColleghi.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                binding.textColleghiValue.text = "${progress + 1}"
-                viewModel.updateColleghiValue(progress + 1)
-            }
-
-            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
-            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
-        })
-
-        // Listener per i SeekBarSoddisfazione
-        binding.seekbarSoddisfazione.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                binding.textSoddisfazioneValue.text = "${progress + 1}"
-                viewModel.updateSoddisfazioneValue(progress + 1)
-            }
-
-            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
-            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
-        })
+        dialog.show()
     }
 
     // Aggiorna la UI con la lista di valutazioni

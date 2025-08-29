@@ -23,6 +23,9 @@
         <action
             android:id="@+id/action_homeFragment_to_boardFragment"
             app:destination="@id/boardFragment" />
+        <action
+            android:id="@+id/action_homeFragment_to_requestsFragment"
+            app:destination="@id/requestsFragment" />
     </fragment>
 
     <fragment
@@ -53,4 +56,9 @@
         android:id="@+id/boardFragment"
         android:name="com.example.coreteamproject.BoardFragment"
         android:label="BoardFragment" />
+
+    <fragment
+        android:id="@+id/requestsFragment"
+        android:name="com.example.coreteamproject.RequestsFragment"
+        android:label="RequestsFragment" />
 </navigation>

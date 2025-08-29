@@ -15,19 +15,34 @@ class BoardViewModel : ViewModel() {
     private val db = FirebaseFirestore.getInstance()
     private val auth = FirebaseAuth.getInstance()
 
-    // Data class che rappresenta un singolo annuncio sulla bacheca
-    data class Annuncio(
-        val id: String = "",
-        val content: String = "",
-        val userId: String = "",
-        val authorName: String = "",
-        val settore: String = "",
-        val timestamp: Date = Date(),
-        val likes: Long = 0,
-        val dislikes: Long = 0,
+    // Classe che rappresenta un singolo annuncio sulla bacheca
+    class Annuncio(
+        val id: String,
+        val content: String,
+        val userId: String,
+        val authorName: String,
+        val settore: String,
+        val timestamp: Date,
+        var likes: Long = 0,
+        var dislikes: Long = 0,
         val likedBy: List<String> = emptyList(),
         val dislikedBy: List<String> = emptyList()
-    )
+    ) {
+        // Override di equals e hashCode per garantire che DiffUtil funzioni correttamente
+        // Confrontiamo solo gli ID perché sono unici per ogni annuncio.
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (javaClass != other?.javaClass) return false
+
+            other as Annuncio
+
+            return id == other.id
+        }
+
+        override fun hashCode(): Int {
+            return id.hashCode()
+        }
+    }
 
     // LiveData che espone la lista di annunci caricati da Firestore
     private val _annunci = MutableLiveData<List<Annuncio>>()
@@ -56,9 +71,20 @@ class BoardViewModel : ViewModel() {
                     return@addSnapshotListener
                 }
 
-                // Converte i documenti in oggetti Annuncio
-                val annunciList = snapshots?.map { doc ->
-                    doc.toObject(Annuncio::class.java).copy(id = doc.id)
+                // Converte i documenti in oggetti Annuncio manualmente per evitare errori di tipo
+                val annunciList = snapshots?.map { document ->
+                    Annuncio(
+                        id = document.id,
+                        content = document.getString("content") ?: "",
+                        userId = document.getString("userId") ?: "",
+                        authorName = document.getString("authorName") ?: "",
+                        settore = document.getString("settore") ?: "",
+                        timestamp = document.getTimestamp("timestamp")?.toDate() ?: Date(),
+                        likes = document.getLong("likes") ?: 0,
+                        dislikes = document.getLong("dislikes") ?: 0,
+                        likedBy = document.get("likedBy") as? List<String> ?: emptyList(),
+                        dislikedBy = document.get("dislikedBy") as? List<String> ?: emptyList()
+                    )
                 } ?: emptyList()
                 _annunci.value = annunciList
             }
@@ -73,6 +99,7 @@ class BoardViewModel : ViewModel() {
             .addOnSuccessListener { document ->
                 val name = document.getString("namelastname") ?: "Utente Sconosciuto"
                 val sector = document.getString("settoreOccupazione") ?: "N/A"
+                val timestamp = document.get("timestamp", com.google.firebase.Timestamp::class.java)?.toDate() ?: Date()
 
                 // 2. Prepara i dati dell'annuncio
                 val annuncioData = hashMapOf(
@@ -116,16 +143,21 @@ class BoardViewModel : ViewModel() {
 
         db.runTransaction { transaction ->
             val snapshot = transaction.get(docRef)
-            val likedBy = snapshot.get("likedBy") as? MutableList<String> ?: mutableListOf()
-            val dislikedBy = snapshot.get("dislikedBy") as? MutableList<String> ?: mutableListOf()
+
+            // Converti correttamente le liste da Firestore
+            val currentLikedBy = (snapshot.get("likedBy") as? List<String>) ?: emptyList()
+            val currentDislikedBy = (snapshot.get("dislikedBy") as? List<String>) ?: emptyList()
+
+            val likedBy = currentLikedBy.toMutableList()
+            val dislikedBy = currentDislikedBy.toMutableList()
 
             if (likedBy.contains(userId)) {
+                // L'utente ha già messo like, quindi lo rimuove
                 likedBy.remove(userId)
             } else {
+                // L'utente non ha messo like, quindi lo aggiunge e rimuove il dislike se presente
                 likedBy.add(userId)
-                if (dislikedBy.contains(userId)) {
-                    dislikedBy.remove(userId)
-                }
+                dislikedBy.remove(userId)
             }
 
             transaction.update(docRef, "likedBy", likedBy)
@@ -134,6 +166,11 @@ class BoardViewModel : ViewModel() {
             transaction.update(docRef, "dislikes", dislikedBy.size.toLong())
 
             null
+        }.addOnSuccessListener {
+            Log.d("BoardViewModel", "Like aggiornato con successo")
+        }.addOnFailureListener { e ->
+            _error.value = "Errore nell'aggiornamento del like: ${e.message}"
+            Log.e("BoardViewModel", "Errore toggle like", e)
         }
     }
 
@@ -143,16 +180,21 @@ class BoardViewModel : ViewModel() {
 
         db.runTransaction { transaction ->
             val snapshot = transaction.get(docRef)
-            val likedBy = snapshot.get("likedBy") as? MutableList<String> ?: mutableListOf()
-            val dislikedBy = snapshot.get("dislikedBy") as? MutableList<String> ?: mutableListOf()
+
+            // Converti correttamente le liste da Firestore
+            val currentLikedBy = (snapshot.get("likedBy") as? List<String>) ?: emptyList()
+            val currentDislikedBy = (snapshot.get("dislikedBy") as? List<String>) ?: emptyList()
+
+            val likedBy = currentLikedBy.toMutableList()
+            val dislikedBy = currentDislikedBy.toMutableList()
 
             if (dislikedBy.contains(userId)) {
+                // L'utente ha già messo dislike, quindi lo rimuove
                 dislikedBy.remove(userId)
             } else {
+                // L'utente non ha messo dislike, quindi lo aggiunge e rimuove il like se presente
                 dislikedBy.add(userId)
-                if (likedBy.contains(userId)) {
-                    likedBy.remove(userId)
-                }
+                likedBy.remove(userId)
             }
 
             transaction.update(docRef, "dislikedBy", dislikedBy)
@@ -161,6 +203,11 @@ class BoardViewModel : ViewModel() {
             transaction.update(docRef, "likes", likedBy.size.toLong())
 
             null
+        }.addOnSuccessListener {
+            Log.d("BoardViewModel", "Dislike aggiornato con successo")
+        }.addOnFailureListener { e ->
+            _error.value = "Errore nell'aggiornamento del dislike: ${e.message}"
+            Log.e("BoardViewModel", "Errore toggle dislike", e)
         }
     }
 }

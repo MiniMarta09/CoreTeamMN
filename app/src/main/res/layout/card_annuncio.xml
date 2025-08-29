@@ -85,6 +85,13 @@
                 android:layout_marginStart="16dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:src="@drawable/ic_dislike" />
+
+            <TextView
+                android:id="@+id/textViewDislikesCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                tools:text="2" />
         </LinearLayout>
 
         <LinearLayout

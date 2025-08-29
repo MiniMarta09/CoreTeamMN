@@ -44,5 +44,9 @@ class HomeFragment : Fragment() {
         view.findViewById<Button>(R.id.buttonBacheca).setOnClickListener {
             findNavController().navigate(R.id.action_homeFragment_to_boardFragment)
         }
+
+        view.findViewById<Button>(R.id.buttonRequests).setOnClickListener {
+            findNavController().navigate(R.id.action_homeFragment_to_requestsFragment)
+        }
     }
 }

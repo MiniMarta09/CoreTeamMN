@@ -24,7 +24,7 @@
         android:id="@+id/textDescriptionHome"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="25dp"
+        android:layout_marginTop="20dp"
         android:text="Inizia da qui: organizza, collabora, cresci"
         android:textColor="@color/black"
         android:textSize="18sp"
@@ -40,7 +40,7 @@
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:layout_marginStart="60dp"
-        android:layout_marginTop="35dp"
+        android:layout_marginTop="30dp"
         android:layout_marginEnd="60dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
@@ -202,6 +202,38 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp"
                 android:text="Team"
+                android:textColor="@color/purple_500"
+                android:textSize="16dp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- Richieste - Terza riga destra -->
+        <LinearLayout
+            android:id="@+id/requestsLayout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="40dp"
+            android:gravity="center"
+            android:orientation="vertical"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/teamLayout">
+
+            <Button
+                android:id="@+id/buttonRequests"
+                android:layout_width="100dp"
+                android:layout_height="100dp"
+                android:background="@drawable/round_button"
+                android:padding="20dp"
+                android:text=""
+                app:icon="@drawable/ic_request"
+                app:iconSize="55dp"
+                app:iconTint="@color/white" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="Richieste"
                 android:textColor="@color/purple_500"
                 android:textSize="16dp"
                 android:textStyle="bold" />

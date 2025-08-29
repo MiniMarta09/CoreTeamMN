@@ -6,11 +6,13 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
+import android.widget.ImageButton
 import android.widget.TextView
 import android.widget.Toast
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
-import com.example.coreteamproject.databinding.CardAnnuncioBinding
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.coreteamproject.databinding.FragmentBoardBinding
 import com.google.firebase.auth.FirebaseAuth
 import java.text.SimpleDateFormat
@@ -25,6 +27,7 @@ class BoardFragment : Fragment() {
     private val viewModel: BoardViewModel by viewModels()
     private lateinit var firebaseAuth: FirebaseAuth
     private var currentUserId: String? = null
+    private lateinit var annuncioAdapter: AnnuncioAdapter
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -43,6 +46,8 @@ class BoardFragment : Fragment() {
         firebaseAuth = FirebaseAuth.getInstance()
         currentUserId = firebaseAuth.currentUser?.uid
 
+        setupRecyclerView()
+
         // Click listener per aggiungere un nuovo annuncio
         binding.fabAddAnnuncio.setOnClickListener {
             showEditAnnuncioDialog(null)
@@ -50,7 +55,7 @@ class BoardFragment : Fragment() {
 
         // Osserva gli annunci e aggiorna la UI
         viewModel.annunci.observe(viewLifecycleOwner) { annunci ->
-            updateAnnunciUI(annunci)
+            annuncioAdapter.submitList(annunci)
         }
 
         // Osserva gli errori e li mostra in un Toast
@@ -59,49 +64,17 @@ class BoardFragment : Fragment() {
         }
     }
 
-    // Aggiorna la UI con la lista degli annunci
-    private fun updateAnnunciUI(annunci: List<BoardViewModel.Annuncio>) {
-        binding.annunciContainer.removeAllViews()
-        if (annunci.isEmpty()) {
-            val noAnnunciTextView = TextView(context).apply {
-                text = "Nessun annuncio presente."
-                textAlignment = View.TEXT_ALIGNMENT_CENTER
-                textSize = 16f
-            }
-            binding.annunciContainer.addView(noAnnunciTextView)
-        } else {
-            val inflater = LayoutInflater.from(context)
-            annunci.forEach { annuncio ->
-                val cardView = inflater.inflate(R.layout.card_annuncio, binding.annunciContainer, false)
-
-                val contentTextView = cardView.findViewById<TextView>(R.id.textViewContent)
-                val authorTextView = cardView.findViewById<TextView>(R.id.textViewAuthor)
-                val sectorTextView = cardView.findViewById<TextView>(R.id.textViewSector)
-                val dateTextView = cardView.findViewById<TextView>(R.id.textViewDate)
-                val editButton = cardView.findViewById<View>(R.id.buttonEdit)
-                val deleteButton = cardView.findViewById<View>(R.id.buttonDelete)
-                val actionsLayout = cardView.findViewById<View>(R.id.actions_layout)
-
-                contentTextView.text = annuncio.content
-                authorTextView.text =  "${annuncio.authorName}"
-                sectorTextView.text = annuncio.settore
-                dateTextView.text = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(annuncio.timestamp)
-
-                if (currentUserId == annuncio.userId) {
-                    actionsLayout.visibility = View.VISIBLE
-                } else {
-                    actionsLayout.visibility = View.GONE
-                }
-
-                editButton.setOnClickListener {
-                    showEditAnnuncioDialog(annuncio)
-                }
-                deleteButton.setOnClickListener {
-                    showDeleteConfirmationDialog(annuncio)
-                }
-
-                binding.annunciContainer.addView(cardView)
-            }
+    private fun setupRecyclerView() {
+        annuncioAdapter = AnnuncioAdapter(
+            currentUserId = currentUserId,
+            onLikeClicked = { annuncioId -> viewModel.toggleLike(annuncioId) },
+            onDislikeClicked = { annuncioId -> viewModel.toggleDislike(annuncioId) },
+            onEditClicked = { annuncio -> showEditAnnuncioDialog(annuncio) },
+            onDeleteClicked = { annuncio -> showDeleteConfirmationDialog(annuncio) }
+        )
+        binding.recyclerViewAnnunci.apply {
+            adapter = annuncioAdapter
+            layoutManager = LinearLayoutManager(context)
         }
     }
 
