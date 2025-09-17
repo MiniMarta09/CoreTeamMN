@@ -8,13 +8,20 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 
+// Enumerazione per i ruoli utente
+enum class UserRole {
+    USER,      // Utente standard
+    ADMIN      // Amministratore
+}
+
 // Data class che rappresenta un dipendente con i relativi dati personali e lavorativi
 data class Dipendente(
     val userId: String = "",            // ID univoco utente (da Firebase Auth)
     val namelastname: String = "",      // Nome e cognome del dipendente
     val email: String = "",             // Email dell'utente
     val dataNascita: String = "",       // Data di nascita in formato stringa
-    val settoreOccupazione: String = "" // Settore lavorativo del dipendente
+    val settoreOccupazione: String = "", // Settore lavorativo del dipendente
+    val ruolo: UserRole = UserRole.USER  // Ruolo dell'utente (default: USER)
 )
 
 // ViewModel per gestire dati e stato relativi agli utenti
@@ -46,6 +53,10 @@ class UsersViewModel : ViewModel() {
     // LiveData che indica se la lista dipendenti è vuota
     private val _isEmpty = MutableLiveData<Boolean>()
     val isEmpty: LiveData<Boolean> = _isEmpty
+    
+    // LiveData per il ruolo dell'utente corrente
+    private val _userRole = MutableLiveData<UserRole>(UserRole.USER)
+    val userRole: LiveData<UserRole> = _userRole
 
     // Funzione per caricare tutti i dipendenti dal database Firestore
     fun caricaDipendenti() {
@@ -65,6 +76,14 @@ class UsersViewModel : ViewModel() {
                         val email = document.getString("email") ?: ""
                         val dataNascita = document.getString("dataNascita") ?: ""
                         val settoreOccupazione = document.getString("settoreOccupazione") ?: ""
+                        
+                        // Gestione del ruolo con valore di default
+                        val ruolo = try {
+                            val ruoloStr = document.getString("ruolo") ?: "USER"
+                            UserRole.valueOf(ruoloStr.uppercase())
+                        } catch (e: Exception) {
+                            UserRole.USER
+                        }
 
                         // Log di debug per verificare i dati estratti
                         Log.d("UsersViewModel", "Documento ${document.id}:")
@@ -79,7 +98,8 @@ class UsersViewModel : ViewModel() {
                             namelastname = namelastname,
                             email = email,
                             dataNascita = dataNascita,
-                            settoreOccupazione = settoreOccupazione
+                            settoreOccupazione = settoreOccupazione,
+                            ruolo = ruolo
                         )
 
                         // Aggiunge il dipendente alla lista
@@ -113,6 +133,7 @@ class UsersViewModel : ViewModel() {
         if (user != null) {
             _isLoading.value = true       // Indica caricamento in corso
             _error.value = null           // Resetta errori precedenti
+            _userRole.value = UserRole.USER // Imposta ruolo di default
 
             // Recupera il documento profilo corrispondente all'UID dell'utente
             db.collection("Profili").document(user.uid)
@@ -120,14 +141,22 @@ class UsersViewModel : ViewModel() {
                 .addOnSuccessListener { document ->
                     if (document != null && document.exists()) {
                         // Se il documento esiste, costruisce il Dipendente dai dati Firestore
+                        val ruolo = try {
+                            UserRole.valueOf(document.getString("ruolo") ?: "USER")
+                        } catch (e: Exception) {
+                            UserRole.USER
+                        }
+                        
                         val dipendente = Dipendente(
                             userId = document.getString("userId") ?: user.uid,
                             namelastname = document.getString("namelastname") ?: (user.displayName ?: ""),
                             email = user.email ?: "",
                             dataNascita = document.getString("dataNascita") ?: "",
-                            settoreOccupazione = document.getString("settoreOccupazione") ?: ""
+                            settoreOccupazione = document.getString("settoreOccupazione") ?: "",
+                            ruolo = ruolo
                         )
                         _currentUserProfile.value = dipendente
+                        _userRole.value = ruolo // Imposta il ruolo dell'utente
                         Log.d("UsersViewModel", "Profilo caricato per: ${dipendente.namelastname}")
                     } else {
                         // Se non esiste il documento, crea un profilo base con dati dell'utente autenticato
@@ -136,7 +165,8 @@ class UsersViewModel : ViewModel() {
                             namelastname = user.displayName ?: "",
                             email = user.email ?: "",
                             dataNascita = "",
-                            settoreOccupazione = ""
+                            settoreOccupazione = "",
+                            ruolo = UserRole.USER
                         )
                         _currentUserProfile.value = dipendente
                         Log.d("UsersViewModel", "Nessun profilo trovato, creato profilo base")
@@ -159,44 +189,69 @@ class UsersViewModel : ViewModel() {
             _isLoading.value = true       // Indica caricamento in corso
             _error.value = null           // Resetta errori precedenti
 
-            // Crea una mappa con i dati del profilo da salvare su Firestore
-            val profiloDipendente = hashMapOf(
-                "namelastname" to (user.displayName ?: ""),
-                "dataNascita" to dataNascita,
-                "email" to user.email,
-                "password" to password,
-                "settoreOccupazione" to settoreOccupazione,
-                "userId" to user.uid
-            )
-
-            // Salva o aggiorna il documento corrispondente all'utente
+            // Prima controlla se il documento esiste per decidere se creare o aggiornare
             db.collection("Profili").document(user.uid)
-                .set(profiloDipendente)
-                .addOnSuccessListener {
-                    Log.d("UsersViewModel", "Profilo salvato con successo!")
-                    _saveSuccess.value = true
-                    _isLoading.value = false
-
-                    // Aggiorna anche la LiveData del profilo corrente con i dati nuovi
-                    val dipendenteAggiornato = Dipendente(
-                        userId = user.uid,
-                        namelastname = user.displayName ?: "",
-                        email = user.email ?: "",
-                        dataNascita = dataNascita,
-                        settoreOccupazione = settoreOccupazione
-                    )
-                    _currentUserProfile.value = dipendenteAggiornato
+                .get()
+                .addOnSuccessListener { document ->
+                    if (document.exists()) {
+                        // Il documento esiste, aggiorna solo i campi necessari (preserva il ruolo)
+                        val aggiornamenti = hashMapOf<String, Any>(
+                            "namelastname" to (user.displayName ?: ""),
+                            "dataNascita" to dataNascita,
+                            "email" to (user.email ?: ""),
+                            "password" to password,
+                            "settoreOccupazione" to settoreOccupazione,
+                            "userId" to user.uid
+                        )
+                        
+                        db.collection("Profili").document(user.uid)
+                            .update(aggiornamenti)
+                            .addOnSuccessListener {
+                                Log.d("UsersViewModel", "Profilo aggiornato con successo!")
+                                _saveSuccess.value = true
+                                _isLoading.value = false
+                                caricaProfiloUtente() // Ricarica il profilo aggiornato
+                            }
+                            .addOnFailureListener { e ->
+                                Log.w("UsersViewModel", "Errore nell'aggiornamento", e)
+                                _error.value = "Errore nel salvataggio: ${e.message}"
+                                _isLoading.value = false
+                            }
+                    } else {
+                        // Il documento non esiste, crealo con il ruolo USER di default
+                        val profiloDipendente = hashMapOf(
+                            "namelastname" to (user.displayName ?: ""),
+                            "dataNascita" to dataNascita,
+                            "email" to (user.email ?: ""),
+                            "password" to password,
+                            "settoreOccupazione" to settoreOccupazione,
+                            "userId" to user.uid,
+                            "ruolo" to "USER"  // Solo per nuovi documenti
+                        )
+                        
+                        db.collection("Profili").document(user.uid)
+                            .set(profiloDipendente)
+                            .addOnSuccessListener {
+                                Log.d("UsersViewModel", "Profilo creato con successo!")
+                                _saveSuccess.value = true
+                                _isLoading.value = false
+                                caricaProfiloUtente() // Ricarica il profilo aggiornato
+                            }
+                            .addOnFailureListener { e ->
+                                Log.w("UsersViewModel", "Errore nella creazione", e)
+                                _error.value = "Errore nel salvataggio: ${e.message}"
+                                _isLoading.value = false
+                            }
+                    }
                 }
                 .addOnFailureListener { e ->
-                    Log.w("UsersViewModel", "Errore nel salvataggio", e)
+                    Log.w("UsersViewModel", "Errore nel controllo documento", e)
                     _error.value = "Errore nel salvataggio: ${e.message}"
                     _isLoading.value = false
                 }
         }
     }
 
-    fun incrementScore(isTeamA: Boolean) {
-            }
 
     // Resetta il flag di successo del salvataggio
     fun resetSaveSuccess() {

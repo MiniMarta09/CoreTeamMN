@@ -12,6 +12,8 @@ import com.firebase.ui.auth.AuthUI
 import com.firebase.ui.auth.FirebaseAuthUIActivityResultContract
 import com.firebase.ui.auth.data.model.FirebaseAuthUIAuthenticationResult
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.ktx.Firebase
 
 class WelcomeActivity : AppCompatActivity() {
 
@@ -70,8 +72,47 @@ class WelcomeActivity : AppCompatActivity() {
         if (result.resultCode == RESULT_OK) {
             // Login effettuato con successo
             val user = FirebaseAuth.getInstance().currentUser
-            Log.d("AuthSuccess", "Utente autenticato: ${user?.email}")
-            startMainActivity() // Avvia la MainActivity
+            user?.let {
+                Log.d("AuthSuccess", "Utente autenticato: ${it.email}")
+                
+                // Controlla se il profilo esiste già
+                Firebase.firestore.collection("Profili").document(it.uid)
+                    .get()
+                    .addOnSuccessListener { document ->
+                        if (document.exists()) {
+                            // L'utente esiste già, non sovrascrivere i dati
+                            Log.d("Firestore", "Utente esistente, profilo non modificato")
+                            startRoleSelectionActivity()
+                        } else {
+                            // Nuovo utente, crea il profilo con ruolo USER
+                            val userData = hashMapOf(
+                                "userId" to it.uid,
+                                "email" to (it.email ?: ""),
+                                "namelastname" to (it.displayName ?: ""),
+                                "ruolo" to "USER"  // Solo per nuovi utenti
+                            )
+                            
+                            Firebase.firestore.collection("Profili").document(it.uid)
+                                .set(userData)
+                                .addOnSuccessListener {
+                                    Log.d("Firestore", "Nuovo profilo utente creato con successo")
+                                    startRoleSelectionActivity()
+                                }
+                                .addOnFailureListener { e ->
+                                    Log.e("Firestore", "Errore nel salvataggio del profilo", e)
+                                    Toast.makeText(this, "Errore nel salvataggio del profilo", Toast.LENGTH_SHORT).show()
+                                    startMainActivity() // Continua comunque all'app
+                                }
+                        }
+                    }
+                    .addOnFailureListener { e ->
+                        Log.e("Firestore", "Errore nel controllo profilo esistente", e)
+                        startMainActivity() // Continua comunque all'app
+                    }
+            } ?: run {
+                // Se per qualche motivo user è null, avvia comunque l'app
+                startMainActivity()
+            }
         } else {
             // Login fallito o annullato dall'utente
             if (response == null) {
@@ -89,10 +130,19 @@ class WelcomeActivity : AppCompatActivity() {
         }
     }
 
-    // Avvia la MainActivity e chiude WelcomeActivity
+    // Avvia la MainActivity
     private fun startMainActivity() {
         val intent = Intent(this, MainActivity::class.java)
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         startActivity(intent)
-        finish()
+        finish() // Chiude la WelcomeActivity per evitare di tornare indietro
+    }
+    
+    // Avvia la RoleSelectionActivity
+    private fun startRoleSelectionActivity() {
+        val intent = Intent(this, RoleSelectionActivity::class.java)
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        startActivity(intent)
+        finish() // Chiude la WelcomeActivity per evitare di tornare indietro
     }
 }
