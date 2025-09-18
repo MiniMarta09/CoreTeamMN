@@ -76,16 +76,21 @@ class RequestsFragment : Fragment() {
                     val userRole = document.getString("RUOLO") // Legge RUOLO maiuscolo
                     isAdmin = userRole == "ADMIN"
                     if (isAdmin) {
-                                                binding.textViewRequestsTitle.text = "Richieste Dipendenti"
+                        binding.textViewRequestsTitle.text = "Richieste Dipendenti"
+                        binding.fabAddRequest.visibility = View.GONE // Nasconde il pulsante per l'admin
+                    } else {
+                        binding.fabAddRequest.visibility = View.VISIBLE // Mostra il pulsante per l'utente
                     }
                 } else {
                     isAdmin = false
+                    binding.fabAddRequest.visibility = View.VISIBLE // Mostra il pulsante per l'utente
                 }
                 setupRecyclerView()
                 viewModel.loadRequests(isAdmin)
             }
             .addOnFailureListener { e ->
                 isAdmin = false
+                binding.fabAddRequest.visibility = View.VISIBLE // Mostra comunque il pulsante in caso di errore
                 setupRecyclerView()
                 viewModel.loadRequests(isAdmin)
                 Toast.makeText(context, "Errore caricamento profilo: ${e.message}", Toast.LENGTH_SHORT).show()

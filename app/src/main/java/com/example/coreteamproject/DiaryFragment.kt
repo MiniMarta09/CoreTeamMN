@@ -1,5 +1,6 @@
 package com.example.coreteamproject
 
+import android.util.Log
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -15,6 +16,13 @@ import com.example.coreteamproject.databinding.FragmentDiaryBinding
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.textfield.TextInputEditText
 import android.widget.Button
+import androidx.core.content.ContextCompat
+import com.github.mikephil.charting.data.BarData
+import com.github.mikephil.charting.data.BarDataSet
+import com.github.mikephil.charting.data.BarEntry
+import com.github.mikephil.charting.formatter.IndexAxisValueFormatter
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 
 // Fragment per gestire il diario
 class DiaryFragment : Fragment() {
@@ -22,8 +30,8 @@ class DiaryFragment : Fragment() {
     // Variabili per databinding e viewmodel
     private lateinit var binding: FragmentDiaryBinding
     private lateinit var viewModel: DiaryViewModel
+    private var isAdmin: Boolean = false
 
-    // Metodo chiamato alla creazione del fragment
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -40,17 +48,24 @@ class DiaryFragment : Fragment() {
         binding.viewModel = viewModel
         binding.lifecycleOwner = this
 
-        // Configura gli observer
-        setupObservers()
-
-        // Imposta i listener per i pulsanti
-        setupListeners()
-
         return binding.root
     }
 
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        // Carica il profilo utente per determinare il ruolo e avviare il caricamento dei dati
+        loadUserProfile()
+
+        // Configura gli observer
+        setupObservers(view) // Passa la vista agli observer
+
+        // Imposta i listener per i pulsanti
+        setupListeners()
+    }
+
     // Configura gli observer per i LiveData del ViewModel
-    private fun setupObservers() {
+    private fun setupObservers(view: View) {
         // Observer per la lista di valutazioni
         viewModel.valutazioni.observe(viewLifecycleOwner, Observer { valutazioni ->
             aggiornaListaValutazioni(valutazioni)
@@ -72,12 +87,30 @@ class DiaryFragment : Fragment() {
             }
         })
 
-        // Observer per lo stato vuoto
+        // Observer per lo stato vuoto (solo per la vista utente)
         viewModel.isEmpty.observe(viewLifecycleOwner, Observer { isEmpty ->
-            if (isEmpty) {
+            if (!isAdmin && isEmpty) {
                 mostraMessaggioVuoto()
             }
         })
+
+        // Observer per i dati del grafico (solo per admin)
+        viewModel.chartData.observe(viewLifecycleOwner, Observer { chartData ->
+            if (isAdmin && chartData != null) {
+                setupChart(chartData)
+            }
+        })
+
+        // Observer per le statistiche aggregate (solo per admin)
+        viewModel.diaryStats.observe(viewLifecycleOwner, Observer { stats ->
+            if (isAdmin && stats != null) {
+                view.findViewById<TextView>(R.id.strengthTextView)?.text = stats.overallStrength
+                view.findViewById<TextView>(R.id.weaknessTextView)?.text = stats.overallWeakness
+                view.findViewById<TextView>(R.id.participationTextView)?.text = stats.participation
+                view.findViewById<TextView>(R.id.bestMonthTextView)?.text = stats.bestMonth
+            }
+        })
+
     }
 
     // Configura il listener per il pulsante di aggiunta
@@ -140,6 +173,122 @@ class DiaryFragment : Fragment() {
             gravity = android.view.Gravity.CENTER_HORIZONTAL
         }
         binding.recyclerValutazioni.addView(textNoData)
+    }
+
+    // Carica il profilo utente per determinare il ruolo
+    private fun loadUserProfile() {
+        val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
+
+        FirebaseFirestore.getInstance().collection("Profili").document(userId).get()
+            .addOnSuccessListener { document ->
+                val userRole = document.getString("RUOLO")
+                isAdmin = userRole == "ADMIN"
+
+                // Aggiorna la UI in base al ruolo
+                updateUiForRole()
+
+                // Avvia il caricamento dei dati specifici per il ruolo
+                viewModel.loadDiaryData(isAdmin)
+            }
+            .addOnFailureListener {
+                isAdmin = false
+                updateUiForRole()
+                viewModel.loadDiaryData(isAdmin)
+            }
+    }
+
+    // Aggiorna la UI per mostrare la vista corretta (admin o utente) in base al ruolo
+    private fun updateUiForRole() {
+        if (isAdmin) {
+            binding.barChart.visibility = View.VISIBLE
+            binding.customLegendLayout.visibility = View.VISIBLE // Mostra la leggenda personalizzata
+            binding.statsLayout.visibility = View.VISIBLE // Mostra le statistiche
+            binding.recyclerValutazioni.visibility = View.GONE
+            binding.btnAggiungiValutazione.visibility = View.GONE
+            binding.textViewDiary.text = "Dashboard Diario"
+            binding.textDescriptionDiary.text = "Andamento mensile del team"
+        } else {
+            binding.barChart.visibility = View.GONE
+            binding.customLegendLayout.visibility = View.GONE // Nasconde la leggenda personalizzata
+            binding.statsLayout.visibility = View.GONE // Nasconde le statistiche
+            binding.recyclerValutazioni.visibility = View.VISIBLE
+            binding.btnAggiungiValutazione.visibility = View.VISIBLE
+        }
+    }
+
+    // Configura l'aspetto e i dati del grafico a barre per la dashboard dell'admin
+    private fun setupChart(chartData: ChartData) {
+        val entriesStress = mutableListOf<BarEntry>()
+        val entriesColleghi = mutableListOf<BarEntry>()
+        val entriesSoddisfazione = mutableListOf<BarEntry>()
+        val labels = mutableListOf<String>()
+
+        chartData.monthlyAverages.forEachIndexed { index, data ->
+            entriesStress.add(BarEntry(index.toFloat(), data.avgStress))
+            entriesColleghi.add(BarEntry(index.toFloat(), data.avgRapportoColleghi))
+            entriesSoddisfazione.add(BarEntry(index.toFloat(), data.avgSoddisfazioneLavoro))
+            labels.add(data.monthYear)
+        }
+
+        val stressDataSet = BarDataSet(entriesStress, "Stress").apply {
+            color = ContextCompat.getColor(requireContext(), R.color.red)
+        }
+        val colleghiDataSet = BarDataSet(entriesColleghi, "Rapporto Colleghi").apply {
+            color = ContextCompat.getColor(requireContext(), R.color.purple_500)
+        }
+        val soddisfazioneDataSet = BarDataSet(entriesSoddisfazione, "Soddisfazione Lavoro").apply {
+            color = ContextCompat.getColor(requireContext(), R.color.green)
+        }
+
+        val barData = BarData(stressDataSet, colleghiDataSet, soddisfazioneDataSet)
+        binding.barChart.data = barData
+
+        // Raggruppamento delle barre
+        val groupSpace = 0.3f
+        val barSpace = 0.05f
+        val barWidth = 0.15f
+        barData.barWidth = barWidth
+        binding.barChart.groupBars(0f, groupSpace, barSpace)
+
+        // Configurazione asse X
+        binding.barChart.xAxis.valueFormatter = IndexAxisValueFormatter(labels)
+        binding.barChart.xAxis.position = com.github.mikephil.charting.components.XAxis.XAxisPosition.BOTTOM
+        binding.barChart.xAxis.granularity = 1f
+        binding.barChart.xAxis.setCenterAxisLabels(true)
+        binding.barChart.xAxis.axisMinimum = 0f
+        binding.barChart.xAxis.axisMaximum = labels.size.toFloat()
+
+        // Rimuove i valori numerici sopra le barre
+        barData.setDrawValues(false)
+
+        // --- Stile e personalizzazione del grafico ---
+
+        // Disabilita la leggenda automatica, useremo quella personalizzata
+        binding.barChart.legend.isEnabled = false
+
+        // Assi e griglia
+        binding.barChart.axisRight.isEnabled = false // Nasconde l'asse Y di destra
+        binding.barChart.axisLeft.apply {
+            axisMinimum = 0f // Il valore minimo parte da 0
+            axisMaximum = 5.5f // Il massimo è 5, lasciamo un po' di spazio sopra
+            setDrawGridLines(false) // Nasconde le linee della griglia orizzontale
+            textSize = 12f
+        }
+        binding.barChart.xAxis.apply {
+            setDrawGridLines(false) // Nasconde le linee della griglia verticale
+            textSize = 12f
+        }
+
+        // Altre opzioni estetiche
+        binding.barChart.description.isEnabled = false // Nasconde la descrizione di default
+        binding.barChart.setDrawGridBackground(false) // Rimuove lo sfondo della griglia
+        binding.barChart.animateY(1200) // Animazione di ingresso più fluida
+
+        // Aggiunge spazio extra sotto il grafico per la leggenda
+        binding.barChart.extraBottomOffset = 20f
+
+        // Aggiorna il grafico per applicare tutte le modifiche
+        binding.barChart.invalidate()
     }
 
     // Crea una singola card di valutazione inflatando il layout XML

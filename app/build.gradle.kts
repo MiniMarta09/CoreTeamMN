@@ -73,4 +73,7 @@ dependencies {
     implementation("com.google.firebase:firebase-messaging")
     implementation("com.google.firebase:firebase-inappmessaging-display")
 
+    // Libreria per i grafici
+    implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
+
 }

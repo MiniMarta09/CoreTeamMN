@@ -21,6 +21,26 @@ data class ValutazioneMensile(
     val timestamp: Long = 0               // Timestamp in millisecondi della creazione
 )
 
+// Data class per i dati aggregati del grafico
+data class ChartData(
+    val monthlyAverages: List<MonthlyAverage> // Lista di medie mensili
+)
+
+data class MonthlyAverage(
+    val monthYear: String, // Formato "MM/yyyy"
+    val avgStress: Float,
+    val avgRapportoColleghi: Float,
+    val avgSoddisfazioneLavoro: Float
+)
+
+// Data class per contenere i risultati delle statistiche aggregate
+data class DiaryStats(
+    val overallStrength: String, // Punto di forza generale
+    val overallWeakness: String,  // Area di miglioramento generale
+    val participation: String, // Partecipazione nell'ultimo mese
+    val bestMonth: String // Mese con la media generale più alta
+)
+
 class DiaryViewModel : ViewModel() {
 
     // LiveData privata per mostra/nascondi form inserimento valutazione
@@ -47,9 +67,20 @@ class DiaryViewModel : ViewModel() {
     private val _isEmpty = MutableLiveData<Boolean>()
     val isEmpty: LiveData<Boolean> = _isEmpty
 
+    // LiveData per i dati del grafico (solo per admin)
+    private val _chartData = MutableLiveData<ChartData?>()
+    val chartData: LiveData<ChartData?> = _chartData
+
+    // LiveData per le statistiche aggregate (solo per admin)
+    private val _diaryStats = MutableLiveData<DiaryStats?>()
+    val diaryStats: LiveData<DiaryStats?> = _diaryStats
+
     // Riferimenti a Firebase Firestore e Authentication
     private val db = FirebaseFirestore.getInstance()
     private val auth = FirebaseAuth.getInstance()
+
+    // Memorizza il ruolo dell'utente per le operazioni di ricarica
+    private var isAdminUser: Boolean = false
 
     init {
         // Inizializza valori LiveData di default
@@ -59,8 +90,8 @@ class DiaryViewModel : ViewModel() {
         _saveSuccess.value = false
         _isEmpty.value = true
 
-        // Carica le valutazioni salvate all’avvio del ViewModel
-        caricaValutazioni()
+        // Il caricamento dei dati viene ora avviato dal Fragment, non più automaticamente
+        // caricaValutazioni()
     }
 
     // Mostra il form per inserire una nuova valutazione
@@ -116,7 +147,7 @@ class DiaryViewModel : ViewModel() {
             .add(valutazioneMap)
             .addOnSuccessListener {
                 Log.d("DiaryViewModel", "Salvataggio riuscito con ID: ${it.id}")
-                caricaValutazioni()
+                ricarica() // Ricarica i dati in base al ruolo
                 _saveSuccess.value = true
                 _showForm.value = false
                 _isLoading.value = false
@@ -138,7 +169,7 @@ class DiaryViewModel : ViewModel() {
             .delete()
             .addOnSuccessListener {
                 Log.d("DiaryViewModel", "Valutazione eliminata: $id")
-                caricaValutazioni()
+                ricarica() // Ricarica i dati in base al ruolo
                 _isLoading.value = false
             }
             .addOnFailureListener { e ->
@@ -148,8 +179,100 @@ class DiaryViewModel : ViewModel() {
             }
     }
 
-    // Carica tutte le valutazioni dell’utente autenticato da Firestore
-    private fun caricaValutazioni() {
+    // Punto di ingresso per il caricamento dei dati, chiamato dal Fragment
+    fun loadDiaryData(isAdmin: Boolean) {
+        this.isAdminUser = isAdmin
+        if (isAdmin) {
+            loadAllDiariesForAdmin()
+        } else {
+            loadCurrentUserDiaries()
+        }
+    }
+
+    // Carica i dati aggregati di tutti gli utenti per la vista admin
+    private fun loadAllDiariesForAdmin() {
+        _isLoading.value = true
+        _error.value = null
+
+        db.collection("diaryEntries")
+            .orderBy("timestamp", com.google.firebase.firestore.Query.Direction.DESCENDING)
+            .get()
+            .addOnSuccessListener { snapshot ->
+                val allEntries = snapshot.mapNotNull { doc ->
+                    try {
+                        ValutazioneMensile(
+                            id = doc.id,
+                            meseAnno = doc.getString("meseAnno") ?: "",
+                            stress = (doc.getLong("stress") ?: 0).toInt(),
+                            rapportoColleghi = (doc.getLong("rapportoColleghi") ?: 0).toInt(),
+                            soddisfazioneLavoro = (doc.getLong("soddisfazioneLavoro") ?: 0).toInt(),
+                            commento = doc.getString("commento") ?: "",
+                            userId = doc.getString("userId") ?: "",
+                            timestamp = doc.getLong("timestamp") ?: 0L
+                        )
+                    } catch (e: Exception) {
+                        null
+                    }
+                }
+
+                // Aggrega i dati per mese
+                val monthlyData = allEntries
+                    .groupBy { it.meseAnno }
+                    .map { (monthYear, entries) ->
+                        MonthlyAverage(
+                            monthYear = monthYear,
+                            avgStress = entries.map { it.stress }.average().toFloat(),
+                            avgRapportoColleghi = entries.map { it.rapportoColleghi }.average().toFloat(),
+                            avgSoddisfazioneLavoro = entries.map { it.soddisfazioneLavoro }.average().toFloat()
+                        )
+                    }
+                    .sortedBy { it.monthYear } // Ordina per mese
+
+                _chartData.value = ChartData(monthlyAverages = monthlyData)
+
+                // Calcola le statistiche generali solo se sono presenti dati
+                if (allEntries.isNotEmpty()) {
+                    val overallAvgStress = allEntries.map { it.stress }.average()
+                    val overallAvgColleghi = allEntries.map { it.rapportoColleghi }.average()
+                    val overallAvgSoddisfazione = allEntries.map { it.soddisfazioneLavoro }.average()
+
+                    val averages = mapOf(
+                        "Stress" to overallAvgStress,
+                        "Rapporto Colleghi" to overallAvgColleghi,
+                        "Soddisfazione" to overallAvgSoddisfazione
+                    )
+
+                    // Trova la categoria con la media più alta (punto di forza) e più bassa (debolezza)
+                    val strength = averages.maxByOrNull { it.value }?.key ?: "N/D"
+                    val weakness = averages.minByOrNull { it.value }?.key ?: "N/D"
+
+                    // Calcola la partecipazione: numero di utenti unici che hanno scritto nel mese corrente
+                    val currentMonthYear = SimpleDateFormat("MM/yyyy", Locale.getDefault()).format(Date())
+                    val participantsLastMonth = allEntries.filter { it.meseAnno == currentMonthYear }.distinctBy { it.userId }.size
+                    val totalUsers = allEntries.distinctBy { it.userId }.size.coerceAtLeast(1) // Evita divisione per zero
+                    val participation = "$participantsLastMonth / $totalUsers"
+
+                    // Calcola il mese migliore trovando quello con la media generale più alta
+                    val bestMonth = monthlyData.maxByOrNull { (it.avgStress + it.avgRapportoColleghi + it.avgSoddisfazioneLavoro) / 3 }?.monthYear ?: "N/D"
+
+                    _diaryStats.value = DiaryStats(
+                        overallStrength = strength,
+                        overallWeakness = weakness,
+                        participation = participation,
+                        bestMonth = bestMonth
+                    )
+                }
+
+                _isLoading.value = false
+            }
+            .addOnFailureListener { e ->
+                _error.value = "Errore nel caricamento dei dati per l'admin: ${e.message}"
+                _isLoading.value = false
+            }
+    }
+
+    // Carica solo le valutazioni dell’utente autenticato
+    private fun loadCurrentUserDiaries() {
         _isLoading.value = true
         _error.value = null
 
@@ -213,8 +336,8 @@ class DiaryViewModel : ViewModel() {
     fun updateColleghiValue(value: Int) { /* opzionale */ }
     fun updateSoddisfazioneValue(value: Int) { /* opzionale */ }
 
-    // Ricarica le valutazioni richiamando la funzione dedicata
+    // Ricarica i dati in base al ruolo dell'utente (admin o standard)
     fun ricarica() {
-        caricaValutazioni()
+        loadDiaryData(this.isAdminUser)
     }
 }
