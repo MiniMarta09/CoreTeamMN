@@ -24,47 +24,48 @@ data class Dipendente(
     val ruolo: UserRole = UserRole.USER  // Ruolo dell'utente (default: USER)
 )
 
-// ViewModel per gestire dati e stato relativi agli utenti
+// ViewModel per gestire i dati degli utenti (dipendenti) e la logica di interazione con Firestore
 class UsersViewModel : ViewModel() {
 
-    private val db = Firebase.firestore                    // Riferimento a Firestore
-    private val auth = FirebaseAuth.getInstance()          // Riferimento all'autenticazione Firebase
+    // Riferimenti ai servizi Firebase
+    private val db = Firebase.firestore
+    private val auth = FirebaseAuth.getInstance()
 
-    // LiveData che espone la lista di tutti i dipendenti
+    // LiveData per la lista di tutti i dipendenti (usato nella schermata Team)
     private val _dipendenti = MutableLiveData<List<Dipendente>>()
     val dipendenti: LiveData<List<Dipendente>> = _dipendenti
 
-    // LiveData che espone il profilo dell'utente autenticato
+    // LiveData per il profilo dell'utente attualmente loggato
     private val _currentUserProfile = MutableLiveData<Dipendente?>()
     val currentUserProfile: LiveData<Dipendente?> = _currentUserProfile
 
-    // LiveData che indica se è in corso un caricamento dati
+    // LiveData per gestire lo stato di caricamento (mostra/nasconde la progress bar)
     private val _isLoading = MutableLiveData<Boolean>()
     val isLoading: LiveData<Boolean> = _isLoading
 
-    // LiveData per comunicare eventuali errori all'interfaccia utente
+    // LiveData per comunicare eventuali errori alla UI
     private val _error = MutableLiveData<String?>()
     val error: LiveData<String?> = _error
 
-    // LiveData per segnalare che il salvataggio è andato a buon fine
+    // LiveData per segnalare un salvataggio avvenuto con successo
     private val _saveSuccess = MutableLiveData<Boolean>()
     val saveSuccess: LiveData<Boolean> = _saveSuccess
 
-    // LiveData che indica se la lista dipendenti è vuota
+    // LiveData per indicare se la lista dei dipendenti è vuota
     private val _isEmpty = MutableLiveData<Boolean>()
     val isEmpty: LiveData<Boolean> = _isEmpty
     
-    // LiveData per il ruolo dell'utente corrente
+    // LiveData per esporre il ruolo dell'utente corrente (USER o ADMIN)
     private val _userRole = MutableLiveData<UserRole>(UserRole.USER)
     val userRole: LiveData<UserRole> = _userRole
 
-    // Funzione per caricare tutti i dipendenti dal database Firestore
+    // Carica la lista di tutti i dipendenti dalla collezione 'Profili'
     fun caricaDipendenti() {
-        _isLoading.value = true           // Inizio caricamento
-        _error.value = null               // Resetta errori precedenti
+        _isLoading.value = true // Segnala l'inizio del caricamento
+        _error.value = null // Resetta eventuali errori precedenti
 
-        db.collection("Profili")          // Accede alla collezione "Profili" su Firestore
-            .get()                       // Recupera tutti i documenti
+        db.collection("Profili")
+            .get()
             .addOnSuccessListener { documents ->
                 val listaDipendenti = mutableListOf<Dipendente>()  // Lista temporanea per salvare i dati
 
@@ -79,7 +80,7 @@ class UsersViewModel : ViewModel() {
                         
                         // Gestione del ruolo con valore di default
                         val ruolo = try {
-                            val ruoloStr = document.getString("ruolo") ?: "USER"
+                            val ruoloStr = document.getString("RUOLO") ?: "USER"
                             UserRole.valueOf(ruoloStr.uppercase())
                         } catch (e: Exception) {
                             UserRole.USER
@@ -127,7 +128,7 @@ class UsersViewModel : ViewModel() {
             }
     }
 
-    // Funzione per caricare il profilo dell'utente autenticato
+    // Carica il profilo specifico dell'utente attualmente autenticato
     fun caricaProfiloUtente() {
         val user = auth.currentUser       // Prende l'utente autenticato
         if (user != null) {
@@ -142,7 +143,8 @@ class UsersViewModel : ViewModel() {
                     if (document != null && document.exists()) {
                         // Se il documento esiste, costruisce il Dipendente dai dati Firestore
                         val ruolo = try {
-                            UserRole.valueOf(document.getString("ruolo") ?: "USER")
+                            val ruoloStr = document.getString("RUOLO") ?: "USER"
+                            UserRole.valueOf(ruoloStr.uppercase())
                         } catch (e: Exception) {
                             UserRole.USER
                         }
@@ -182,7 +184,7 @@ class UsersViewModel : ViewModel() {
         }
     }
 
-    // Funzione per salvare o aggiornare il profilo dell'utente corrente
+    // Salva o aggiorna il profilo dell'utente (usato nella schermata Profilo)
     fun salvaProfilo(dataNascita: String, password: String, settoreOccupazione: String) {
         val user = auth.currentUser       // Prende l'utente autenticato
         if (user != null) {
@@ -226,7 +228,7 @@ class UsersViewModel : ViewModel() {
                             "password" to password,
                             "settoreOccupazione" to settoreOccupazione,
                             "userId" to user.uid,
-                            "ruolo" to "USER"  // Solo per nuovi documenti
+                            "RUOLO" to "USER"  // Imposta il ruolo di default per i nuovi utenti
                         )
                         
                         db.collection("Profili").document(user.uid)

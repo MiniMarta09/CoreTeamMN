@@ -50,7 +50,7 @@
             android:background="@color/purple_500"
             app:itemTextColor="@color/white"
             app:itemIconTint="@color/bottom_nav_item_color"
-            app:itemActiveIndicatorStyle="@style/App.Custom.Indicator"
+            app:itemActiveIndicatorStyle="@style/AppCustomIndicator"
             app:labelVisibilityMode="labeled"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"

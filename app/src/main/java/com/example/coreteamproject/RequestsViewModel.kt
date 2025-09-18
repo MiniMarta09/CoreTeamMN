@@ -6,11 +6,12 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.Query
 import java.util.Date
 
+// ViewModel per la gestione delle richieste (ferie, permessi, etc.)
 class RequestsViewModel : ViewModel() {
 
+    // Riferimenti ai servizi Firebase
     private val db = FirebaseFirestore.getInstance()
     private val auth = FirebaseAuth.getInstance()
 
@@ -19,7 +20,10 @@ class RequestsViewModel : ViewModel() {
         FERIE, PERMESSO_ENTRATA, PERMESSO_USCITA, SMARTWORKING
     }
 
-
+    // Enum per lo stato di approvazione
+    enum class RequestStatus {
+        IN_ATTESA, ACCETTATA, RIFIUTATA
+    }
 
     // Classe che rappresenta una richiesta
     class Request(
@@ -29,11 +33,12 @@ class RequestsViewModel : ViewModel() {
         val settore: String,
         val type: RequestType,
         val startDate: Date,
-        val endDate: Date? = null, // Null per permessi di entrata/uscita
-        val startTime: String? = null, // Per permessi orario
-        val endTime: String? = null,   // Per permessi orario
+        val endDate: Date? = null,
+        val startTime: String? = null,
+        val endTime: String? = null,
         val reason: String,
-        val timestamp: Date
+        val timestamp: Date,
+        val status: RequestStatus // Aggiunto il campo stato
     ) {
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
@@ -46,7 +51,7 @@ class RequestsViewModel : ViewModel() {
             return id.hashCode()
         }
 
-        // Funzione helper per ottenere il testo del tipo di richiesta
+        // Funzione helper per il nome del tipo di richiesta
         fun getTypeDisplayName(): String {
             return when (type) {
                 RequestType.FERIE -> "Ferie"
@@ -55,64 +60,105 @@ class RequestsViewModel : ViewModel() {
                 RequestType.SMARTWORKING -> "Smartworking"
             }
         }
+
+        // Funzione helper per il nome dello stato
+        fun getStatusDisplayName(): String {
+            return when (status) {
+                RequestStatus.IN_ATTESA -> "In Attesa"
+                RequestStatus.ACCETTATA -> "Accettata"
+                RequestStatus.RIFIUTATA -> "Rifiutata"
+            }
+        }
     }
 
-    // LiveData per le richieste
+    // LiveData per la lista delle richieste
     private val _requests = MutableLiveData<List<Request>>()
     val requests: LiveData<List<Request>> = _requests
 
+
+    // LiveData per lo stato di caricamento
     private val _isLoading = MutableLiveData<Boolean>()
     val isLoading: LiveData<Boolean> = _isLoading
 
+    // LiveData per eventuali errori
     private val _error = MutableLiveData<String?>()
     val error: LiveData<String?> = _error
 
     init {
-        loadRequests()
+        // Non caricare qui, la chiamata viene fatta da RequestsFragment dopo aver ottenuto il ruolo
     }
 
-    // Carica tutte le richieste dell'utente corrente
-    fun loadRequests() {
-        val currentUserId = auth.currentUser?.uid ?: return
-
+    // Carica le richieste da Firestore, differenziando la logica per admin e utenti standard
+    fun loadRequests(isAdmin: Boolean) {
         _isLoading.value = true
-        db.collection("requests")
-            .whereEqualTo("userId", currentUserId)
-            .addSnapshotListener { snapshots, e ->
+        val collection = db.collection("requests")
+
+        val query = if (isAdmin) {
+            // L'admin legge tutte le richieste
+            collection.orderBy("timestamp", com.google.firebase.firestore.Query.Direction.DESCENDING)
+        } else {
+            // L'utente standard legge solo le proprie richieste
+            val currentUserId = auth.currentUser?.uid
+            if (currentUserId == null) {
+                _error.value = "Utente non autenticato."
+                _isLoading.value = false
+                return
+            }
+            collection.whereEqualTo("userId", currentUserId)
+                .orderBy("timestamp", com.google.firebase.firestore.Query.Direction.DESCENDING)
+        }
+
+        if (isAdmin) {
+            // ADMIN: usa .get() per evitare errori di permesso. La lista non si aggiorna in tempo reale.
+            query.get()
+                .addOnSuccessListener { snapshots ->
+                    _isLoading.value = false
+                    _requests.value = parseRequests(snapshots)
+                }
+                .addOnFailureListener { e ->
+                    _isLoading.value = false
+                    _error.value = "Errore caricamento richieste: ${e.message}"
+                }
+        } else {
+            // UTENTE STANDARD: usa snapshot listener per aggiornamenti in tempo reale.
+            query.addSnapshotListener { snapshots, e ->
                 _isLoading.value = false
                 if (e != null) {
-                    _error.value = "Errore nel caricamento delle richieste: ${e.message}"
-                    Log.e("RequestsViewModel", "Errore nel caricamento delle richieste", e)
+                    _error.value = "Errore caricamento richieste: ${e.message}"
                     return@addSnapshotListener
                 }
-
-                val requestsList = snapshots?.map { document ->
-                    Request(
-                        id = document.id,
-                        userId = document.getString("userId") ?: "",
-                        authorName = document.getString("authorName") ?: "",
-                        settore = document.getString("settore") ?: "",
-                        type = try {
-                            RequestType.valueOf(document.getString("type") ?: "FERIE")
-                        } catch (e: IllegalArgumentException) {
-                            Log.w("RequestsViewModel", "Invalid request type found in document ${document.id}, defaulting to FERIE.")
-                            RequestType.FERIE // Valore di default in caso di errore
-                        },
-                        startDate = document.getTimestamp("startDate")?.toDate() ?: Date(),
-                        endDate = document.getTimestamp("endDate")?.toDate(),
-                        startTime = document.getString("startTime"),
-                        endTime = document.getString("endTime"),
-                        reason = document.getString("reason") ?: "",
-                        timestamp = document.getTimestamp("timestamp")?.toDate() ?: Date()
-                    )
-                } ?: emptyList()
-
-                // Ordina la lista sul client
-                _requests.value = requestsList.sortedByDescending { it.timestamp }
+                _requests.value = parseRequests(snapshots)
             }
+        }
     }
 
-    // Salva una nuova richiesta
+    // Funzione helper per convertire i documenti Firestore in una lista di oggetti Request
+    private fun parseRequests(snapshots: com.google.firebase.firestore.QuerySnapshot?): List<Request> {
+        return snapshots?.mapNotNull { document ->
+            try {
+                Request(
+                    id = document.id,
+                    userId = document.getString("userId") ?: "",
+                    authorName = document.getString("authorName") ?: "",
+                    settore = document.getString("settore") ?: "",
+                    type = RequestType.valueOf(document.getString("type") ?: "FERIE"),
+                    startDate = document.getTimestamp("startDate")?.toDate() ?: Date(),
+                    endDate = document.getTimestamp("endDate")?.toDate(),
+                    startTime = document.getString("startTime"),
+                    endTime = document.getString("endTime"),
+                    reason = document.getString("reason") ?: "",
+                    timestamp = document.getTimestamp("timestamp")?.toDate() ?: Date(),
+                    status = RequestStatus.valueOf(document.getString("status") ?: "IN_ATTESA")
+                )
+            } catch (e: Exception) {
+                Log.w("RequestsViewModel", "Errore parsing documento ${document.id}: ${e.message}")
+                null
+            }
+        } ?: emptyList()
+    }
+
+
+    // Salva una nuova richiesta nel database
     fun saveRequest(
         type: RequestType,
         startDate: Date,
@@ -123,7 +169,6 @@ class RequestsViewModel : ViewModel() {
     ) {
         val userId = auth.currentUser?.uid ?: return
 
-        // Recupera i dati del profilo utente
         db.collection("Profili").document(userId).get()
             .addOnSuccessListener { document ->
                 val name = document.getString("namelastname") ?: "Utente Sconosciuto"
@@ -136,15 +181,18 @@ class RequestsViewModel : ViewModel() {
                     "type" to type.name,
                     "startDate" to startDate,
                     "reason" to reason,
-                    "timestamp" to Date()
+                    "timestamp" to Date(),
+                    "status" to RequestStatus.IN_ATTESA.name
                 )
 
-                // Aggiungi campi opzionali solo se non nulli
                 endDate?.let { requestData["endDate"] = it }
                 startTime?.let { requestData["startTime"] = it }
                 endTime?.let { requestData["endTime"] = it }
 
                 db.collection("requests").add(requestData)
+                    .addOnSuccessListener {
+                        Log.d("RequestsViewModel", "Richiesta salvata con successo")
+                    }
                     .addOnFailureListener { e ->
                         _error.value = "Errore nel salvataggio della richiesta: ${e.message}"
                         Log.e("RequestsViewModel", "Errore salvataggio richiesta", e)
@@ -156,7 +204,7 @@ class RequestsViewModel : ViewModel() {
             }
     }
 
-    // Elimina una richiesta
+    // Elimina una richiesta specifica
     fun deleteRequest(requestId: String) {
         db.collection("requests").document(requestId).delete()
             .addOnFailureListener { e ->
@@ -165,12 +213,22 @@ class RequestsViewModel : ViewModel() {
             }
     }
 
-    // Cancella il messaggio di errore
+    // Aggiorna lo stato di una richiesta (es. da IN_ATTESA a ACCETTATA)
+    fun updateRequestStatus(requestId: String, newStatus: RequestStatus) {
+        db.collection("requests").document(requestId)
+            .update("status", newStatus.name)
+            .addOnFailureListener { e ->
+                _error.value = "Errore nell'aggiornamento dello stato: ${e.message}"
+                Log.e("RequestsViewModel", "Errore aggiornamento stato richiesta", e)
+            }
+    }
+
+    // Pulisce il messaggio di errore una volta gestito
     fun clearError() {
         _error.value = null
     }
 
-    // Genera una lista di orari ogni 15 minuti (00:00, 00:15, 00:30, ecc.)
+    // Genera una lista di orari a intervalli di 15 minuti per i dialoghi di selezione
     fun generateTimeList(): List<String> {
         val timeList = mutableListOf<String>()
         for (hour in 0..23) {

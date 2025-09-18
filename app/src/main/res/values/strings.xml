@@ -8,4 +8,9 @@
     <string name="fui_next_default">Avanti</string>
     <string name="fui_welcome_back_password_prompt_body">Hai già usato %1$s per accedere. Inserisci la password per quell\'account.</string>
     <string name="fui_new_user_header">Benvenuto</string>
+
+    <!-- Home Fragment Strings -->
+    <string name="welcome_admin">Benvenuto Amministratore!</string>
+    <string name="welcome_user">Benvenuti in CoreTeam!</string>
+    <string name="description_admin">gestisci la tua azienda e il tuo team</string>
 </resources>

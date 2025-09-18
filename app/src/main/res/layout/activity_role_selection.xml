@@ -25,7 +25,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
-        android:text="Scegli come vuoi accedere all'app"
+        android:text="Scegli come accedere all'app"
         android:textColor="@color/black"
         android:textSize="16sp"
         app:layout_constraintEnd_toEndOf="parent"
@@ -46,13 +46,13 @@
 
         <Button
             android:id="@+id/buttonDipendente"
-            android:layout_width="200dp"
+            android:layout_width="120dp"
             android:layout_height="120dp"
             android:background="@drawable/round_button"
             android:padding="25dp"
             android:text=""
             app:icon="@drawable/ic_person"
-            app:iconSize="60dp"
+            app:iconSize="70dp"
             app:iconTint="@color/white" />
 
         <TextView
@@ -87,13 +87,13 @@
 
         <Button
             android:id="@+id/buttonCapo"
-            android:layout_width="200dp"
+            android:layout_width="120dp"
             android:layout_height="120dp"
             android:background="@drawable/round_button"
             android:padding="25dp"
             android:text=""
-            app:icon="@drawable/ic_person"
-            app:iconSize="60dp"
+            app:icon="@drawable/ic_admin"
+            app:iconSize="70dp"
             app:iconTint="@color/white" />
 
         <TextView

@@ -32,7 +32,8 @@ class ProfileFragment : Fragment() {
         "Magazzino e Logistica",
         "Vendite",
         "Risorse Umane",
-        "Assistenza Clienti"
+        "Assistenza Clienti",
+        "Titolare"
     )
 
     // Metodo principale del Fragment, eseguito quando viene creato il layout

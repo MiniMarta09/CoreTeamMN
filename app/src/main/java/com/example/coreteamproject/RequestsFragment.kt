@@ -1,8 +1,8 @@
 package com.example.coreteamproject
 
 import android.app.DatePickerDialog
-import android.app.TimePickerDialog
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -13,9 +13,11 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.coreteamproject.databinding.FragmentRequestsBinding
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import java.text.SimpleDateFormat
 import java.util.*
 
+// Fragment per visualizzare e gestire le richieste degli utenti
 class RequestsFragment : Fragment() {
 
     private var _binding: FragmentRequestsBinding? = null
@@ -25,6 +27,7 @@ class RequestsFragment : Fragment() {
     private lateinit var firebaseAuth: FirebaseAuth
     private var currentUserId: String? = null
     private lateinit var requestAdapter: RequestAdapter
+    private var isAdmin: Boolean = false
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -36,25 +39,25 @@ class RequestsFragment : Fragment() {
         return binding.root
     }
 
+    // Metodo chiamato dopo che la vista del fragment è stata creata
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
         firebaseAuth = FirebaseAuth.getInstance()
         currentUserId = firebaseAuth.currentUser?.uid
 
-        setupRecyclerView()
+        // Carica il profilo utente per determinare se è un admin
+        // Questa informazione è necessaria per decidere quali richieste caricare
+        loadUserProfile()
 
-        // Click listener per aggiungere una nuova richiesta
         binding.fabAddRequest.setOnClickListener {
             showRequestTypeDialog()
         }
 
-        // Osserva le richieste e aggiorna la UI
         viewModel.requests.observe(viewLifecycleOwner) { requests ->
             requestAdapter.submitList(requests)
         }
 
-        // Osserva gli errori e li mostra in un Toast
         viewModel.error.observe(viewLifecycleOwner) { error ->
             error?.let {
                 Toast.makeText(context, it, Toast.LENGTH_LONG).show()
@@ -63,10 +66,40 @@ class RequestsFragment : Fragment() {
         }
     }
 
+    // Carica il profilo dell'utente corrente da Firestore per verificare il suo ruolo
+    private fun loadUserProfile() {
+        val userId = currentUserId ?: return
+
+        FirebaseFirestore.getInstance().collection("Profili").document(userId).get()
+            .addOnSuccessListener { document ->
+                if (document != null && document.exists()) {
+                    val userRole = document.getString("RUOLO") // Legge RUOLO maiuscolo
+                    isAdmin = userRole == "ADMIN"
+                    if (isAdmin) {
+                                                binding.textViewRequestsTitle.text = "Richieste Dipendenti"
+                    }
+                } else {
+                    isAdmin = false
+                }
+                setupRecyclerView()
+                viewModel.loadRequests(isAdmin)
+            }
+            .addOnFailureListener { e ->
+                isAdmin = false
+                setupRecyclerView()
+                viewModel.loadRequests(isAdmin)
+                Toast.makeText(context, "Errore caricamento profilo: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+    }
+
+    // Inizializza la RecyclerView e il suo Adapter
     private fun setupRecyclerView() {
         requestAdapter = RequestAdapter(
             currentUserId = currentUserId,
-            onDeleteClicked = { request -> showDeleteConfirmationDialog(request) }
+            isAdmin = isAdmin,
+            onDeleteClicked = { request -> showDeleteConfirmationDialog(request) },
+            onApproveClicked = { request -> showApproveConfirmationDialog(request) },
+            onRejectClicked = { request -> showRejectConfirmationDialog(request) }
         )
         binding.recyclerViewRequests.apply {
             adapter = requestAdapter
@@ -74,7 +107,7 @@ class RequestsFragment : Fragment() {
         }
     }
 
-    // Mostra dialog per scegliere il tipo di richiesta
+    // Mostra un dialogo per scegliere il tipo di richiesta da creare (Ferie, Permesso, etc.)
     private fun showRequestTypeDialog() {
         val requestTypes = arrayOf("Ferie", "Permesso Entrata", "Permesso Uscita", "Smartworking")
 
@@ -93,7 +126,7 @@ class RequestsFragment : Fragment() {
             .show()
     }
 
-    // Mostra dialog per inserire i dettagli della richiesta
+    // Mostra il dialogo principale per la creazione di una nuova richiesta
     private fun showRequestDialog(requestType: RequestsViewModel.RequestType) {
         val dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_new_request, null)
 
@@ -111,9 +144,7 @@ class RequestsFragment : Fragment() {
         var selectedEndTime: String? = null
 
         val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
-        val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
 
-        // Configura la visibilità dei campi in base al tipo di richiesta
         when (requestType) {
             RequestsViewModel.RequestType.FERIE, RequestsViewModel.RequestType.SMARTWORKING -> {
                 layoutEndDate.visibility = View.VISIBLE
@@ -125,7 +156,6 @@ class RequestsFragment : Fragment() {
             }
         }
 
-        // Date picker per data inizio
         buttonStartDate.setOnClickListener {
             val calendar = Calendar.getInstance()
             DatePickerDialog(
@@ -141,7 +171,6 @@ class RequestsFragment : Fragment() {
             ).show()
         }
 
-        // Date picker per data fine
         buttonEndDate.setOnClickListener {
             val calendar = Calendar.getInstance()
             DatePickerDialog(
@@ -157,7 +186,6 @@ class RequestsFragment : Fragment() {
             ).show()
         }
 
-        // Selettore orario per orario inizio
         buttonStartTime.setOnClickListener {
             showTimeSelectionDialog(viewModel.generateTimeList()) { time ->
                 selectedStartTime = time
@@ -165,7 +193,6 @@ class RequestsFragment : Fragment() {
             }
         }
 
-        // Selettore orario per orario fine
         buttonEndTime.setOnClickListener {
             showTimeSelectionDialog(viewModel.generateTimeList()) { time ->
                 selectedEndTime = time
@@ -179,7 +206,6 @@ class RequestsFragment : Fragment() {
             .setPositiveButton("Invia Richiesta") { _, _ ->
                 val reason = editTextReason.text.toString().trim()
 
-                // Validazione input
                 if (reason.isEmpty()) {
                     Toast.makeText(context, "La motivazione è obbligatoria", Toast.LENGTH_SHORT).show()
                     return@setPositiveButton
@@ -190,7 +216,6 @@ class RequestsFragment : Fragment() {
                     return@setPositiveButton
                 }
 
-                // Validazioni specifiche per tipo
                 when (requestType) {
                     RequestsViewModel.RequestType.FERIE, RequestsViewModel.RequestType.SMARTWORKING -> {
                         if (selectedEndDate == null) {
@@ -210,7 +235,6 @@ class RequestsFragment : Fragment() {
                     }
                 }
 
-                // Salva la richiesta
                 viewModel.saveRequest(
                     type = requestType,
                     startDate = selectedStartDate!!,
@@ -224,6 +248,7 @@ class RequestsFragment : Fragment() {
             .show()
     }
 
+    // Funzione helper per ottenere il nome visualizzabile di un tipo di richiesta
     private fun getRequestTypeDisplayName(type: RequestsViewModel.RequestType): String {
         return when (type) {
             RequestsViewModel.RequestType.FERIE -> "Ferie"
@@ -233,7 +258,7 @@ class RequestsFragment : Fragment() {
         }
     }
 
-    // Mostra dialog di conferma per eliminazione
+    // Mostra un dialogo di conferma prima di eliminare una richiesta
     private fun showDeleteConfirmationDialog(request: RequestsViewModel.Request) {
         MaterialAlertDialogBuilder(requireContext())
             .setTitle("Elimina Richiesta")
@@ -245,12 +270,37 @@ class RequestsFragment : Fragment() {
             .show()
     }
 
+    // Mostra un dialogo di conferma per approvare una richiesta (solo admin)
+    private fun showApproveConfirmationDialog(request: RequestsViewModel.Request) {
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Accetta Richiesta")
+            .setMessage("Sei sicuro di voler accettare questa richiesta?")
+            .setPositiveButton("Accetta") { _, _ ->
+                viewModel.updateRequestStatus(request.id, RequestsViewModel.RequestStatus.ACCETTATA)
+            }
+            .setNegativeButton("Annulla", null)
+            .show()
+    }
+
+    // Mostra un dialogo di conferma per rifiutare una richiesta (solo admin)
+    private fun showRejectConfirmationDialog(request: RequestsViewModel.Request) {
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Rifiuta Richiesta")
+            .setMessage("Sei sicuro di voler rifiutare questa richiesta?")
+            .setPositiveButton("Rifiuta") { _, _ ->
+                viewModel.updateRequestStatus(request.id, RequestsViewModel.RequestStatus.RIFIUTATA)
+            }
+            .setNegativeButton("Annulla", null)
+            .show()
+    }
+
+    // Metodo chiamato quando la vista del fragment viene distrutta per pulire il binding
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
     }
 
-    // Mostra un dialog per selezionare un orario da una lista
+    // Mostra un dialogo per selezionare un orario da una lista predefinita
     private fun showTimeSelectionDialog(timeList: List<String>, onTimeSelected: (String) -> Unit) {
         val timeArray = timeList.toTypedArray()
 
