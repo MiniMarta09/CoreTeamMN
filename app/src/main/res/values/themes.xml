@@ -24,9 +24,11 @@
     <style name="Theme.CoreTeamProject" parent="Base.Theme.CoreTeamProject" />
 
     <style name="Theme.CoreTeamProject.Admin" parent="Base.Theme.CoreTeamProject">
-        <item name="colorPrimary">@color/purple_admin_dark</item>
-        <item name="colorPrimaryVariant">@color/purple_admin_dark</item>
-        <item name="colorPrimaryContainer">@color/purple_admin_dark</item>
+        <item name="colorPrimary">@color/admin_primary</item>
+        <item name="colorPrimaryVariant">@color/admin_primary_variant</item>
+        <item name="colorPrimaryContainer">@color/admin_primary</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorOnPrimaryContainer">@color/white</item>
     </style>
 
     <style name="AppCustomIndicator" parent="Widget.Material3.BottomNavigationView.ActiveIndicator">

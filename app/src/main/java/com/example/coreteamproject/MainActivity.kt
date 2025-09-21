@@ -10,30 +10,51 @@ import android.view.Menu
 import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.NavHostFragment
+import com.google.android.material.appbar.AppBarLayout
+import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.firebase.auth.FirebaseAuth
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var usersViewModel: UsersViewModel
+    private var isAdminThemeApplied = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        // Legge il ruolo scelto dall'utente per sapere se è in modalità admin
-        // Anche se non cambia il tema, questa informazione potrebbe essere utile in futuro
-        val userRole = intent.getStringExtra("USER_ROLE")
-
-        // Imposta il tema di default dell'applicazione
-        setTheme(R.style.Theme_CoreTeamProject)
+        // Controlla se è stato passato il flag per il tema admin
+        isAdminThemeApplied = intent.getBooleanExtra("ADMIN_THEME", false)
+        
+        // Imposta il tema appropriato prima di chiamare super.onCreate()
+        if (isAdminThemeApplied) {
+            setTheme(R.style.Theme_CoreTeamProject_Admin)
+        } else {
+            setTheme(R.style.Theme_CoreTeamProject)
+        }
 
         super.onCreate(savedInstanceState)
 
         // Inizializza ViewModel
         usersViewModel = ViewModelProvider(this)[UsersViewModel::class.java]
-
+        
         // Imposta il layout dell'interfaccia
         setContentView(R.layout.activity_main)
+        
+        // Carica il profilo utente per determinare il ruolo
+        usersViewModel.caricaProfiloUtente()
+        
+        // Osserva il ruolo dell'utente per applicare il tema corretto
+        usersViewModel.userRole.observe(this) { ruolo ->
+            if (ruolo == UserRole.ADMIN && !isAdminThemeApplied) {
+                // Riavvia l'activity con il tema admin
+                recreateWithAdminTheme()
+            } else if (ruolo == UserRole.ADMIN && isAdminThemeApplied) {
+                // Applica i colori admin agli elementi che non sono coperti dal tema
+                applyAdminUIColors()
+            }
+        }
 
         // Crea il canale per le notifiche
         createNotificationChannel()
@@ -74,6 +95,31 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    // Riavvia l'activity con il tema admin
+    private fun recreateWithAdminTheme() {
+        val intent = Intent(this, MainActivity::class.java)
+        intent.putExtra("ADMIN_THEME", true)
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        startActivity(intent)
+        finish()
+    }
+
+    // Applica i colori admin agli elementi UI
+    private fun applyAdminUIColors() {
+        val adminColor = ContextCompat.getColor(this, R.color.admin_primary)
+        val adminColorSelector = ContextCompat.getColorStateList(this, R.color.bottom_nav_item_color_admin)
+        
+        // Aggiorna la toolbar
+        val toolbar = findViewById<MaterialToolbar>(R.id.toolbar)
+        val appBarLayout = findViewById<AppBarLayout>(R.id.appBarLayout)
+        toolbar?.setBackgroundColor(adminColor)
+        appBarLayout?.setBackgroundColor(adminColor)
+        
+        // Aggiorna la bottom navigation
+        val bottomNavigation = findViewById<BottomNavigationView>(R.id.bottom_navigation)
+        bottomNavigation?.setBackgroundColor(adminColor)
+        bottomNavigation?.itemIconTintList = adminColorSelector
+    }
 
     // Crea un canale notifiche per poter inviare notifiche
     private fun createNotificationChannel() {
