@@ -38,6 +38,17 @@ data class TurnoSettore(
     val modalita: String = "presenza"
 )
 
+// Data class per rappresentare una richiesta di ferie/permesso
+data class Richiesta(
+    val userId: String = "",
+    val data: String = "",
+    val tipo: String = "", // Es. "Ferie", "Permesso Entrata", "Permesso Uscita"
+    val stato: String = "", // Es. "In attesa", "Accettata", "Rifiutata"
+    val orario: String? = null, // Per permessi orari
+    val startDate: com.google.firebase.Timestamp? = null,
+    val endDate: com.google.firebase.Timestamp? = null
+)
+
 object ContrattiPredefiniti {
     fun getContratti(): Map<SettoreLavorativo, ContrattoTipo> {
         return mapOf(

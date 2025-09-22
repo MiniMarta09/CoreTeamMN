@@ -17,11 +17,37 @@ class SettoriSchedulingAlgorithm {
      */
     fun generaTurniDaContratti(
         dipendenti: List<DisponibilitaDipendente>,
-        parametri: ParametriScheduling
+        parametri: ParametriScheduling,
+        richiesteApprovate: List<Richiesta> = emptyList() // Aggiunto parametro per le richieste
     ): List<TurnoSettore> {
 
         val turniGenerati = mutableListOf<TurnoSettore>()
         val calendar = Calendar.getInstance()
+
+        // 1. Pre-processa le richieste per un accesso super efficiente
+        val ferieMap = mutableMapOf<String, MutableSet<String>>()
+        richiesteApprovate.filter { it.tipo == "FERIE" }.forEach { richiesta ->
+            val calendar = Calendar.getInstance()
+            val formatter = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.ITALIAN)
+
+            val startDate = richiesta.startDate?.toDate() ?: return@forEach
+            val endDate = richiesta.endDate?.toDate() ?: startDate
+
+            calendar.time = startDate
+            while (!calendar.time.after(endDate)) {
+                val dataString = formatter.format(calendar.time)
+                ferieMap.getOrPut(richiesta.userId) { mutableSetOf() }.add(dataString)
+                calendar.add(Calendar.DAY_OF_YEAR, 1)
+            }
+        }
+
+        val permessiMap = richiesteApprovate
+            .filter { it.tipo == "PERMESSO_ENTRATA" || it.tipo == "PERMESSO_USCITA" } // Corretto in maiuscolo
+            .associateBy { "${it.userId}_${it.data}" }
+
+        Log.d("SchedulingDebug", "--- Mappe Costruite dall'Algoritmo ---")
+        Log.d("SchedulingDebug", "Mappa Ferie: $ferieMap")
+        Log.d("SchedulingDebug", "Mappa Permessi: $permessiMap")
 
         try {
             calendar.time = dateFormat.parse(parametri.dataInizio) ?: return emptyList()
@@ -66,25 +92,49 @@ class SettoriSchedulingAlgorithm {
                     continue
                 }
 
-                // Trova l'orario di lavoro per il giorno corrente in base al contratto del dipendente
+                // 2. Controlla se il dipendente è in ferie in questo giorno (controllo super veloce)
+                val idDipendente = dipendente.userId.trim()
+                val dataCorrente = dataString.trim()
+                val ferieUtente = ferieMap[idDipendente]
+
+                Log.d("SchedulingDebug", "Controllo Ferie per: UserID='${idDipendente}', Data='${dataCorrente}'. Ferie trovate per l'utente: ${ferieUtente ?: "Nessuna"}")
+
+                if (ferieUtente?.contains(dataCorrente) == true) {
+                    Log.i("SchedulingAlgorithm", "SALTATO TURNO per ${dipendente.nomeCompleto} il $dataCorrente causa Ferie.")
+                    continue // Passa al prossimo dipendente
+                }
+
+                // 3. Trova l'orario di lavoro standard dal contratto
                 contratto.orari.find { it.giorno == giornoCorrente }?.let { orarioLavoro ->
-                    // Crea un turno specifico per questo dipendente
-                    val turnoId = "${dipendente.userId}_${dataString}" // ID univoco per dipendente e giorno
+                    var orarioInizio = orarioLavoro.orarioInizio
+                    var orarioFine = orarioLavoro.orarioFine
 
-                    Log.d(
-                        "SchedulingAlgorithm",
-                        "Creato turno per ${dipendente.nomeCompleto} nel settore '${contratto.settore.nomeVisualizzato}' il $giornoCorrente"
-                    )
+                    // 4. Controlla se c'è un permesso per questo giorno (controllo super veloce)
+                    val permessoDelGiorno = permessiMap["${dipendente.userId}_${dataString}"]
+                    if (permessoDelGiorno != null) {
+                        when (permessoDelGiorno.tipo) {
+                            "PERMESSO_ENTRATA" -> { // Corretto in maiuscolo
+                                orarioInizio = permessoDelGiorno.orario ?: orarioInizio
+                                Log.i("SchedulingAlgorithm", "Modificato orario inizio per ${dipendente.nomeCompleto} a $orarioInizio")
+                            }
+                            "PERMESSO_USCITA" -> { // Corretto in maiuscolo
+                                orarioFine = permessoDelGiorno.orario ?: orarioFine
+                                Log.i("SchedulingAlgorithm", "Modificato orario fine per ${dipendente.nomeCompleto} a $orarioFine")
+                            }
+                        }
+                    }
 
+                    // 5. Crea il turno con gli orari (potenzialmente modificati)
+                    val turnoId = "${dipendente.userId}_${dataString}"
                     turniGenerati.add(
                         TurnoSettore(
                             id = turnoId,
                             data = dataString,
-                            orarioInizio = orarioLavoro.orarioInizio,
-                            orarioFine = orarioLavoro.orarioFine,
+                            orarioInizio = orarioInizio,
+                            orarioFine = orarioFine,
                             settore = contratto.settore.nomeVisualizzato,
-                            dipendentiAssegnati = listOf(dipendente.nomeCompleto), // Assegna solo il singolo dipendente
-                            modalita = "presenza" // Default
+                            dipendentiAssegnati = listOf(dipendente.nomeCompleto),
+                            modalita = "presenza"
                         )
                     )
                 }
