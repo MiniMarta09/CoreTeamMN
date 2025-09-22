@@ -13,6 +13,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.coreteamproject.databinding.FragmentRequestsBinding
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.firebase.auth.FirebaseAuth
+import androidx.core.content.ContextCompat
 import com.google.firebase.firestore.FirebaseFirestore
 import java.text.SimpleDateFormat
 import java.util.*
@@ -73,28 +74,47 @@ class RequestsFragment : Fragment() {
         FirebaseFirestore.getInstance().collection("Profili").document(userId).get()
             .addOnSuccessListener { document ->
                 if (document != null && document.exists()) {
-                    val userRole = document.getString("RUOLO") // Legge RUOLO maiuscolo
+                    val userRole = document.getString("RUOLO")
                     isAdmin = userRole == "ADMIN"
-                    if (isAdmin) {
-                        binding.textViewRequestsTitle.text = "Richieste Dipendenti"
-                        binding.fabAddRequest.visibility = View.GONE // Nasconde il pulsante per l'admin
-                    } else {
-                        binding.fabAddRequest.visibility = View.VISIBLE // Mostra il pulsante per l'utente
-                    }
                 } else {
                     isAdmin = false
-                    binding.fabAddRequest.visibility = View.VISIBLE // Mostra il pulsante per l'utente
                 }
+                // Aggiorna la UI in base al ruolo
+                updateUiForRole()
                 setupRecyclerView()
                 viewModel.loadRequests(isAdmin)
             }
             .addOnFailureListener { e ->
                 isAdmin = false
-                binding.fabAddRequest.visibility = View.VISIBLE // Mostra comunque il pulsante in caso di errore
+                updateUiForRole()
                 setupRecyclerView()
                 viewModel.loadRequests(isAdmin)
                 Toast.makeText(context, "Errore caricamento profilo: ${e.message}", Toast.LENGTH_SHORT).show()
             }
+    }
+
+    private fun updateUiForRole() {
+        if (isAdmin) {
+            val adminPrimaryColor = ContextCompat.getColor(requireContext(), R.color.admin_primary)
+            val adminVariantColor = ContextCompat.getColor(requireContext(), R.color.admin_primary_variant)
+
+            binding.textViewRequestsTitle.text = "Richieste Dipendenti"
+            binding.textViewRequestsTitle.setTextColor(adminPrimaryColor)
+            binding.textViewRequestsDescription.setTextColor(adminVariantColor)
+            binding.fabAddRequest.visibility = View.GONE
+            binding.fabAddRequest.backgroundTintList = android.content.res.ColorStateList.valueOf(adminPrimaryColor)
+
+        } else {
+            // Assicura che la UI per l'utente standard sia corretta
+            val userPrimaryColor = ContextCompat.getColor(requireContext(), R.color.purple_500)
+            val userTextColor = ContextCompat.getColor(requireContext(), R.color.black)
+
+            binding.textViewRequestsTitle.text = "Le Mie Richieste"
+            binding.textViewRequestsTitle.setTextColor(userPrimaryColor)
+            binding.textViewRequestsDescription.setTextColor(userTextColor)
+            binding.fabAddRequest.visibility = View.VISIBLE
+            binding.fabAddRequest.backgroundTintList = android.content.res.ColorStateList.valueOf(userPrimaryColor)
+        }
     }
 
     // Inizializza la RecyclerView e il suo Adapter

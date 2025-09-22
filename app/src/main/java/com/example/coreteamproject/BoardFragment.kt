@@ -15,6 +15,7 @@ import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.coreteamproject.databinding.FragmentBoardBinding
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import java.text.SimpleDateFormat
 import java.util.Locale
 
@@ -28,6 +29,7 @@ class BoardFragment : Fragment() {
     private lateinit var firebaseAuth: FirebaseAuth
     private var currentUserId: String? = null
     private lateinit var annuncioAdapter: AnnuncioAdapter
+    private var isAdmin: Boolean = false
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -47,6 +49,7 @@ class BoardFragment : Fragment() {
         currentUserId = firebaseAuth.currentUser?.uid
 
         setupRecyclerView()
+        loadUserProfile()
 
         // Click listener per aggiungere un nuovo annuncio
         binding.fabAddAnnuncio.setOnClickListener {
@@ -119,5 +122,33 @@ class BoardFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+    }
+
+    private fun loadUserProfile() {
+        val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
+
+        FirebaseFirestore.getInstance().collection("Profili").document(userId).get()
+            .addOnSuccessListener { document ->
+                val userRole = document.getString("RUOLO")
+                isAdmin = userRole == "ADMIN"
+                if (isAdmin) {
+                    updateUiForAdmin()
+                }
+            }
+            .addOnFailureListener {
+                isAdmin = false
+            }
+    }
+
+    private fun updateUiForAdmin() {
+        val adminPrimaryColor = ContextCompat.getColor(requireContext(), R.color.admin_primary)
+        val adminVariantColor = ContextCompat.getColor(requireContext(), R.color.admin_primary_variant)
+
+        // Aggiorna titolo e sottotitolo
+        binding.textViewBachecaTitle.setTextColor(adminPrimaryColor)
+        binding.textViewBachecaDescription.setTextColor(adminVariantColor)
+
+        // Aggiorna colore pulsante
+        binding.fabAddAnnuncio.backgroundTintList = android.content.res.ColorStateList.valueOf(adminPrimaryColor)
     }
 }

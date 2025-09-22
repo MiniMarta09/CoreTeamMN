@@ -11,6 +11,7 @@ import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import com.example.coreteamproject.databinding.FragmentShiftBinding
+import androidx.core.content.ContextCompat
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -140,6 +141,10 @@ class ShiftFragment : Fragment() {
             isAdmin = (role == UserRole.ADMIN)
             Log.d("ShiftFragment", "isAdmin impostato a: $isAdmin")
             
+            // Se l'utente è admin, aggiorna la UI con i colori dedicati
+            if (isAdmin) {
+                updateUiForAdmin()
+            }
             // Forza aggiornamento UI per mostrare/nascondere bottone admin
             val currentTurni = viewModel.turni.value ?: emptyList()
             updateShiftsUI(currentTurni)
@@ -437,7 +442,12 @@ class ShiftFragment : Fragment() {
         // Bottone Orari Settori (per tutti)
         val orariButton = Button(requireContext())
         orariButton.text = "📋 Orari Settori"
-        orariButton.setBackgroundResource(R.drawable.round_button)
+        // Cambia colore se l'utente è admin
+        if (isAdmin) {
+            orariButton.setBackgroundResource(R.drawable.round_button_admin)
+        } else {
+            orariButton.setBackgroundResource(R.drawable.round_button)
+        }
         orariButton.setTextColor(resources.getColor(android.R.color.white, null))
         orariButton.setPadding(20, 20, 20, 20)
         orariButton.setOnClickListener {
@@ -781,6 +791,26 @@ class ShiftFragment : Fragment() {
     /**
      * Mostra dialog con gli orari dei settori aziendali
      */
+    private fun updateUiForAdmin() {
+        val adminPrimaryColor = ContextCompat.getColor(requireContext(), R.color.admin_primary)
+        val adminVariantColor = ContextCompat.getColor(requireContext(), R.color.admin_primary_variant)
+
+        // Aggiorna titolo e sottotitolo
+        binding.textViewShift.setTextColor(adminPrimaryColor)
+        binding.textDescriptionShift.setTextColor(adminVariantColor)
+        binding.textDescriptionShift.text = "Gestione turni del team"
+
+        // Aggiorna colore testi data e ore
+        binding.textSelectedDate.setTextColor(adminPrimaryColor)
+        binding.textMonthlyHours.setTextColor(adminPrimaryColor)
+
+        // Nasconde il pulsante di aggiunta turno singolo per l'admin
+        binding.btnAddShift.visibility = View.GONE
+
+        // Ricarica i bottoni per applicare il colore admin
+        addBottonsAtBottom()
+    }
+
     private fun mostraOrariSettori(settori: List<SettoreAziendale>) {
         val scrollView = ScrollView(requireContext())
         val layout = LinearLayout(requireContext())

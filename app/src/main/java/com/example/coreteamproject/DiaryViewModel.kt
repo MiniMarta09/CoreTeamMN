@@ -75,6 +75,10 @@ class DiaryViewModel : ViewModel() {
     private val _diaryStats = MutableLiveData<DiaryStats?>()
     val diaryStats: LiveData<DiaryStats?> = _diaryStats
 
+    // LiveData per controllare la visibilità della dashboard
+    private val _showDashboard = MutableLiveData<Boolean>(false)
+    val showDashboard: LiveData<Boolean> = _showDashboard
+
     // Riferimenti a Firebase Firestore e Authentication
     private val db = FirebaseFirestore.getInstance()
     private val auth = FirebaseAuth.getInstance()
@@ -89,6 +93,7 @@ class DiaryViewModel : ViewModel() {
         _valutazioni.value = emptyList()
         _saveSuccess.value = false
         _isEmpty.value = true
+        _showDashboard.value = false
 
         // Il caricamento dei dati viene ora avviato dal Fragment, non più automaticamente
         // caricaValutazioni()
@@ -271,6 +276,11 @@ class DiaryViewModel : ViewModel() {
             }
     }
 
+    // Funzione per alternare la visibilità della dashboard
+    fun toggleDashboardVisibility() {
+        _showDashboard.value = !(_showDashboard.value ?: false)
+    }
+
     // Carica solo le valutazioni dell’utente autenticato
     private fun loadCurrentUserDiaries() {
         _isLoading.value = true
@@ -310,6 +320,10 @@ class DiaryViewModel : ViewModel() {
                 Log.d("DiaryViewModel", "Valutazioni caricate: ${lista.size}")
                 _valutazioni.value = lista     // Aggiorna LiveData con lista valutazioni
                 _isEmpty.value = lista.isEmpty() // Indica se la lista è vuota
+
+                // Prepara i dati per il grafico e le statistiche dell'utente corrente
+                prepareUserData(lista)
+
                 _isLoading.value = false       // Termina caricamento
             }
             .addOnFailureListener { e ->
@@ -335,6 +349,58 @@ class DiaryViewModel : ViewModel() {
     fun updateStressValue(value: Int) { /* opzionale */ }
     fun updateColleghiValue(value: Int) { /* opzionale */ }
     fun updateSoddisfazioneValue(value: Int) { /* opzionale */ }
+
+    // Prepara i dati del grafico e delle statistiche per l'utente corrente
+    private fun prepareUserData(entries: List<ValutazioneMensile>) {
+        if (entries.isEmpty()) {
+            _chartData.value = null
+            _diaryStats.value = null
+            return
+        }
+
+        // Aggrega i dati per mese
+        val monthlyData = entries
+            .groupBy { it.meseAnno }
+            .map { (monthYear, monthEntries) ->
+                MonthlyAverage(
+                    monthYear = monthYear,
+                    avgStress = monthEntries.map { it.stress }.average().toFloat(),
+                    avgRapportoColleghi = monthEntries.map { it.rapportoColleghi }.average().toFloat(),
+                    avgSoddisfazioneLavoro = monthEntries.map { it.soddisfazioneLavoro }.average().toFloat()
+                )
+            }
+            .sortedBy { it.monthYear } // Ordina per mese
+
+        _chartData.value = ChartData(monthlyAverages = monthlyData)
+
+        // Calcola le statistiche
+        val overallAvgStress = entries.map { it.stress }.average()
+        val overallAvgColleghi = entries.map { it.rapportoColleghi }.average()
+        val overallAvgSoddisfazione = entries.map { it.soddisfazioneLavoro }.average()
+
+        val averages = mapOf(
+            "Stress" to overallAvgStress,
+            "Rapporto Colleghi" to overallAvgColleghi,
+            "Soddisfazione" to overallAvgSoddisfazione
+        )
+
+        val strength = averages.maxByOrNull { it.value }?.key ?: "N/D"
+        val weakness = averages.minByOrNull { it.value }?.key ?: "N/D"
+
+        // Per la partecipazione, consideriamo solo l'utente corrente
+        val currentMonthYear = SimpleDateFormat("MM/yyyy", Locale.getDefault()).format(Date())
+        val participatedThisMonth = entries.any { it.meseAnno == currentMonthYear }
+        val participation = if (participatedThisMonth) "1 / 1" else "0 / 1"
+
+        val bestMonth = monthlyData.maxByOrNull { (it.avgStress + it.avgRapportoColleghi + it.avgSoddisfazioneLavoro) / 3 }?.monthYear ?: "N/D"
+
+        _diaryStats.value = DiaryStats(
+            overallStrength = strength,
+            overallWeakness = weakness,
+            participation = participation,
+            bestMonth = bestMonth
+        )
+    }
 
     // Ricarica i dati in base al ruolo dell'utente (admin o standard)
     fun ricarica() {

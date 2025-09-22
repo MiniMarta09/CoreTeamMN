@@ -5,6 +5,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
+import android.widget.TextView
 import android.widget.Toast
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
@@ -12,6 +13,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.Observer
 import com.example.coreteamproject.databinding.FragmentProfileBinding
 import com.google.firebase.auth.FirebaseAuth
+import androidx.core.content.ContextCompat
 
 // Fragment per la visualizzazione e modifica del profilo utente
 class ProfileFragment : Fragment() {
@@ -102,6 +104,13 @@ class ProfileFragment : Fragment() {
             }
         })
 
+        // Osserva il ruolo dell'utente per personalizzare i colori
+        viewModel.userRole.observe(viewLifecycleOwner, Observer { ruolo ->
+            if (ruolo == UserRole.ADMIN) {
+                updateUiForAdmin()
+            }
+        })
+
         // Mostra messaggio di successo al salvataggio e disabilita la modifica
         viewModel.saveSuccess.observe(viewLifecycleOwner, Observer { success ->
             if (success) {
@@ -170,6 +179,30 @@ class ProfileFragment : Fragment() {
         binding.spinnerSettore.isEnabled = false
         binding.btnSalva.visibility = View.GONE
         binding.btnModifica.text = "Modifica Profilo"
+    }
+
+    // Applica i colori per la vista Admin
+    private fun updateUiForAdmin() {
+        val adminPrimaryColor = ContextCompat.getColor(requireContext(), R.color.admin_primary)
+        val adminVariantColor = ContextCompat.getColor(requireContext(), R.color.admin_primary_variant)
+
+        // Titolo e sottotitolo
+        binding.textViewProfile.setTextColor(adminPrimaryColor)
+        binding.textDescriptionprofile.setTextColor(adminVariantColor)
+
+        // Etichette dei campi
+        val labels = listOf<TextView>(
+            binding.root.findViewWithTag("label_nome"),
+            binding.root.findViewWithTag("label_data_nascita"),
+            binding.root.findViewWithTag("label_email"),
+            binding.root.findViewWithTag("label_settore"),
+            binding.root.findViewWithTag("label_password")
+        )
+        labels.forEach { it?.setTextColor(adminPrimaryColor) }
+
+        // Pulsanti
+        binding.btnModifica.setBackgroundResource(R.drawable.round_button_admin)
+        binding.btnSalva.setBackgroundResource(R.drawable.round_button_admin)
     }
 
     // Legge i dati dai campi e invia la richiesta di salvataggio al ViewModel

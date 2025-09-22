@@ -10,6 +10,9 @@ import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import com.example.coreteamproject.databinding.FragmentEventBinding
+import androidx.core.content.ContextCompat
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 
 // Fragment per gestire gli eventi
 class EventFragment : Fragment() {
@@ -17,6 +20,7 @@ class EventFragment : Fragment() {
     // Variabili per data binding e viewmodel
     private lateinit var binding: FragmentEventBinding
     private lateinit var viewModel: EventViewModel
+    private var isAdmin: Boolean = false
 
     // Metodo chiamato alla creazione del fragment
     override fun onCreateView(
@@ -36,6 +40,9 @@ class EventFragment : Fragment() {
         // Setup UI
         setupUI()
         setupObservers()
+
+        // Carica il profilo utente per determinare il ruolo
+        loadUserProfile()
         
         return binding.root
     }
@@ -131,6 +138,39 @@ class EventFragment : Fragment() {
     }
 
     // Finestra di dialogo per aggiungere nuovi eventi
+    private fun updateUiForAdmin() {
+        val adminPrimaryColor = ContextCompat.getColor(requireContext(), R.color.admin_primary)
+        val adminVariantColor = ContextCompat.getColor(requireContext(), R.color.admin_primary_variant)
+
+        // Aggiorna titolo e sottotitolo
+        binding.textViewEvent.setTextColor(adminPrimaryColor)
+        binding.textDescriptionEvent.setTextColor(adminVariantColor)
+        binding.textDescriptionEvent.text = "Gestione eventi del team"
+
+        // Aggiorna colore testo data
+        binding.textSelectedDate.setTextColor(adminPrimaryColor)
+
+        // Aggiorna colore pulsante
+        binding.btnAddEvent.background.setTint(adminPrimaryColor)
+    }
+
+    private fun loadUserProfile() {
+        val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
+
+        FirebaseFirestore.getInstance().collection("Profili").document(userId).get()
+            .addOnSuccessListener { document ->
+                val userRole = document.getString("RUOLO")
+                isAdmin = userRole == "ADMIN"
+                if (isAdmin) {
+                    updateUiForAdmin()
+                }
+            }
+            .addOnFailureListener {
+                // In caso di errore, si procede con la UI di default
+                isAdmin = false
+            }
+    }
+
     private fun showAddDialog() {
         val layout = LinearLayout(requireContext())
         layout.orientation = LinearLayout.VERTICAL

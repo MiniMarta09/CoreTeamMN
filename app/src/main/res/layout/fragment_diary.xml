@@ -56,6 +56,16 @@
 
 
 
+            <Button
+                android:id="@+id/btn_visualizza_dashboard"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="Visualizza la tua Dashboard"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/textDescriptionDiary" />
+
             <!-- ProgressBar -->
             <ProgressBar
                 android:id="@+id/progressBar"
@@ -65,7 +75,7 @@
                 android:visibility="@{viewModel.isLoading ? View.VISIBLE : View.GONE}"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/textDescriptionDiary" />
+                app:layout_constraintTop_toBottomOf="@+id/btn_visualizza_dashboard" />
 
             <!-- Grafico per la vista Admin -->
             <com.github.mikephil.charting.charts.BarChart
@@ -73,7 +83,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="300dp"
                 android:layout_marginTop="16dp"
-                android:visibility="gone"
+                android:visibility="@{viewModel.showDashboard ? View.VISIBLE : View.GONE}"
                 app:layout_constraintTop_toBottomOf="@+id/progressBar" />
 
             <!-- Lista valutazioni -->
@@ -83,6 +93,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
                 android:orientation="vertical"
+                android:visibility="@{!viewModel.showDashboard ? View.VISIBLE : View.GONE}"
                 app:layout_constraintTop_toBottomOf="@id/barChart" />
 
             <!-- Leggenda Personalizzata per il Grafico -->
@@ -93,7 +104,7 @@
                 android:orientation="horizontal"
                 android:gravity="center"
                 android:layout_marginTop="8dp"
-                android:visibility="gone"
+                android:visibility="@{viewModel.showDashboard ? View.VISIBLE : View.GONE}"
                 tools:visibility="visible"
                 app:layout_constraintTop_toBottomOf="@id/barChart">
 
@@ -116,9 +127,9 @@
                 android:orientation="vertical"
                 android:layout_marginTop="16dp"
                 android:padding="8dp"
-                android:visibility="gone"
+                android:visibility="@{viewModel.showDashboard ? View.VISIBLE : View.GONE}"
                 tools:visibility="visible"
-                app:layout_constraintTop_toBottomOf="@id/customLegendLayout">
+                app:layout_constraintTop_toBottomOf="@+id/customLegendLayout">
 
                 <!-- Prima Riga di Statistiche -->
                 <LinearLayout
@@ -143,6 +154,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
+                                android:id="@+id/strengthTitleTextView"
                                 android:text="Punto di Forza" 
                                 android:textSize="16sp"
                                 android:textStyle="bold"/>
@@ -173,6 +185,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
+                                android:id="@+id/weaknessTitleTextView"
                                 android:text="Area di Miglioramento"
                                 android:textSize="16sp"
                                 android:textStyle="bold"/>
@@ -210,6 +223,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
+                                android:id="@+id/participationTitleTextView"
                                 android:text="Partecipazione Mese"
                                 android:textAlignment="center"
                                 android:textSize="16sp"
@@ -241,6 +255,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
+                                android:id="@+id/bestMonthTitleTextView"
                                 android:text="Mese Migliore"
                                 android:textSize="16sp"
                                 android:textStyle="bold"/>
@@ -267,7 +282,7 @@
         android:layout_margin="16dp"
         android:src="@drawable/ic_add"
         app:backgroundTint="@color/purple_500"
-        android:visibility="@{viewModel.showForm ? View.GONE : View.VISIBLE}"
+        android:visibility="@{(!viewModel.showDashboard &amp;&amp; !viewModel.showForm) ? View.VISIBLE : View.GONE}"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
     </androidx.constraintlayout.widget.ConstraintLayout>

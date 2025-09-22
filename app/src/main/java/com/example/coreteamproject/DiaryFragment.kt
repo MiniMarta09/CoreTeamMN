@@ -94,29 +94,46 @@ class DiaryFragment : Fragment() {
             }
         })
 
-        // Observer per i dati del grafico (solo per admin)
+        // Observer per i dati del grafico (sia admin che utente)
         viewModel.chartData.observe(viewLifecycleOwner, Observer { chartData ->
-            if (isAdmin && chartData != null) {
+            if (chartData != null) {
                 setupChart(chartData)
+            } else {
+                // Se non ci sono dati, nascondi il grafico
+                binding.barChart.visibility = View.GONE
             }
         })
 
-        // Observer per le statistiche aggregate (solo per admin)
+        // Observer per le statistiche aggregate (sia admin che utente)
         viewModel.diaryStats.observe(viewLifecycleOwner, Observer { stats ->
-            if (isAdmin && stats != null) {
-                view.findViewById<TextView>(R.id.strengthTextView)?.text = stats.overallStrength
-                view.findViewById<TextView>(R.id.weaknessTextView)?.text = stats.overallWeakness
-                view.findViewById<TextView>(R.id.participationTextView)?.text = stats.participation
-                view.findViewById<TextView>(R.id.bestMonthTextView)?.text = stats.bestMonth
+            if (stats != null) {
+                binding.strengthTextView.text = stats.overallStrength
+                binding.weaknessTextView.text = stats.overallWeakness
+                binding.participationTextView.text = stats.participation
+                binding.bestMonthTextView.text = stats.bestMonth
+            } else {
+                // Se non ci sono statistiche, potresti voler nascondere la sezione
+                binding.statsLayout.visibility = View.GONE
             }
+        })
+
+        // Observer per cambiare il testo del pulsante della dashboard
+        viewModel.showDashboard.observe(viewLifecycleOwner, Observer { isVisible ->
+            binding.btnVisualizzaDashboard.text = if (isVisible) "Nascondi Dashboard" else "Visualizza la tua Dashboard"
         })
 
     }
 
-    // Configura il listener per il pulsante di aggiunta
+    // Configura i listener per i pulsanti
     private fun setupListeners() {
+        // Listener per il pulsante di aggiunta valutazione
         binding.btnAggiungiValutazione.setOnClickListener {
             showValutazioneDialog()
+        }
+
+        // Listener per il pulsante che mostra/nasconde la dashboard
+        binding.btnVisualizzaDashboard.setOnClickListener {
+            viewModel.toggleDashboardVisibility()
         }
     }
 
@@ -200,19 +217,39 @@ class DiaryFragment : Fragment() {
     // Aggiorna la UI per mostrare la vista corretta (admin o utente) in base al ruolo
     private fun updateUiForRole() {
         if (isAdmin) {
-            binding.barChart.visibility = View.VISIBLE
-            binding.customLegendLayout.visibility = View.VISIBLE // Mostra la leggenda personalizzata
-            binding.statsLayout.visibility = View.VISIBLE // Mostra le statistiche
+            // Colori per la vista Admin
+            val adminPrimaryColor = ContextCompat.getColor(requireContext(), R.color.admin_primary)
+            val adminVariantColor = ContextCompat.getColor(requireContext(), R.color.admin_primary_variant)
+
+            // Vista Admin: mostra sempre la dashboard e nasconde la lista valutazioni
+            viewModel.toggleDashboardVisibility() // Assicura che la dashboard sia visibile
             binding.recyclerValutazioni.visibility = View.GONE
             binding.btnAggiungiValutazione.visibility = View.GONE
+            binding.btnVisualizzaDashboard.visibility = View.GONE // L'admin non ha bisogno di alternare la vista
+
+            // Applica i colori Admin ai titoli principali
             binding.textViewDiary.text = "Dashboard Diario"
+            binding.textViewDiary.setTextColor(adminPrimaryColor)
             binding.textDescriptionDiary.text = "Andamento mensile del team"
+            binding.textDescriptionDiary.setTextColor(adminVariantColor)
+
+            // Applica i colori ai titoli delle statistiche
+            binding.strengthTitleTextView.setTextColor(adminPrimaryColor)
+            binding.weaknessTitleTextView.setTextColor(adminPrimaryColor)
+            binding.participationTitleTextView.setTextColor(adminPrimaryColor)
+            binding.bestMonthTitleTextView.setTextColor(adminPrimaryColor)
+
+            // Applica i colori ai valori delle statistiche
+            binding.strengthTextView.setTextColor(adminVariantColor)
+            binding.weaknessTextView.setTextColor(adminVariantColor)
+            binding.participationTextView.setTextColor(adminVariantColor)
+            binding.bestMonthTextView.setTextColor(adminVariantColor)
+
         } else {
-            binding.barChart.visibility = View.GONE
-            binding.customLegendLayout.visibility = View.GONE // Nasconde la leggenda personalizzata
-            binding.statsLayout.visibility = View.GONE // Nasconde le statistiche
+            // Vista Utente: mostra la lista valutazioni e il pulsante per la dashboard
             binding.recyclerValutazioni.visibility = View.VISIBLE
             binding.btnAggiungiValutazione.visibility = View.VISIBLE
+            binding.btnVisualizzaDashboard.visibility = View.VISIBLE
         }
     }
 

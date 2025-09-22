@@ -24,6 +24,8 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import com.example.coreteamproject.databinding.FragmentTeamBinding
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 
 // Visualizza la lista dei dipendenti
 class TeamFragment : Fragment() {
@@ -60,12 +62,16 @@ class TeamFragment : Fragment() {
         // Carica i dipendenti
         viewModel.caricaDipendenti()
 
+        // Controlla il ruolo dell'utente
+        loadUserProfile()
+
         // Restituisce la view
         return binding.root
     }
 
     // Lista completa dei dipendenti per il filtro
     private var listaDipendentiCompleta = listOf<Dipendente>()
+    private var isAdmin: Boolean = false
     
     private fun setupObservers() {
         // Osserva i dipendenti e aggiorna la UI
@@ -168,10 +174,13 @@ class TeamFragment : Fragment() {
         // Ordina i settori
         val settoriOrdinati = dipendentiPerSettore.keys.sorted()
 
+        // Determina il colore dell'header in base al ruolo
+        val headerColor = if (isAdmin) R.color.admin_primary else R.color.purple_500
+
         // Itera sui settori
         for (settore in settoriOrdinati) {
-            // Aggiunge l'header del settore
-            val headerSettore = creaHeaderSettore(settore)
+            // Aggiunge l'header del settore con il colore corretto
+            val headerSettore = creaHeaderSettore(settore, headerColor)
             binding.teamMembersLayout.addView(headerSettore)
 
             // Aggiunge le card dei dipendenti
@@ -184,13 +193,13 @@ class TeamFragment : Fragment() {
         }
     }
     
-    // Crea l'header per un settore
-    private fun creaHeaderSettore(nomeSettore: String): TextView {
+    // Crea l'header per un settore con un colore specifico
+    private fun creaHeaderSettore(nomeSettore: String, colorRes: Int): TextView {
         return TextView(requireContext()).apply {
             text = nomeSettore
             textSize = 20f
             setTypeface(null, Typeface.BOLD)
-            setTextColor(ContextCompat.getColor(context, R.color.purple_500))
+            setTextColor(ContextCompat.getColor(context, colorRes))
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
@@ -336,9 +345,39 @@ class TeamFragment : Fragment() {
         }
     }
 
-    
-    
-    
-    
-    
+    // Carica il profilo utente per determinare il ruolo
+    private fun loadUserProfile() {
+        val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
+
+        FirebaseFirestore.getInstance().collection("Profili").document(userId).get()
+            .addOnSuccessListener { document ->
+                val userRole = document.getString("RUOLO")
+                isAdmin = userRole == "ADMIN"
+                if (isAdmin) {
+                    updateUiForAdmin()
+                }
+            }
+            .addOnFailureListener {
+                // In caso di errore, si procede con la UI di default
+                isAdmin = false
+            }
+    }
+
+    // Applica i colori della UI per la vista Admin
+    private fun updateUiForAdmin() {
+        val adminPrimaryColor = ContextCompat.getColor(requireContext(), R.color.admin_primary)
+        val adminVariantColor = ContextCompat.getColor(requireContext(), R.color.admin_primary_variant)
+
+        // Cambia colore a titolo e sottotitolo
+        binding.textViewTeam.setTextColor(adminPrimaryColor)
+        binding.textDescriptionTeam.setTextColor(adminVariantColor)
+
+        // Cambia colore alla barra di ricerca
+        binding.searchLayout.boxStrokeColor = adminPrimaryColor
+        binding.searchLayout.hintTextColor = android.content.res.ColorStateList.valueOf(adminPrimaryColor)
+        binding.searchLayout.startIconDrawable?.setTint(adminPrimaryColor)
+
+        // Ricarica la lista per applicare il colore agli header
+        mostraDipendenti(listaDipendentiCompleta)
+    }
 }
