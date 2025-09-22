@@ -4,236 +4,323 @@ import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 
-// ViewModel per scheduling admin che usa settori aziendali
+// Data class per rappresentare un turno da visualizzare
+data class TurnoVisualizzato(
+    val id: String,
+    val data: String,
+    val orario: String,
+    val descrizione: String,
+    val settore: String? = "Non specificato"
+)
+
+// Data class per la visualizzazione a card per persona
+data class TurnoAssegnato(
+    val giorno: String,
+    val orario: String,
+    val settore: String
+)
+
+data class ProgrammazioneSettimanalePersona(
+    val nomeDipendente: String,
+    val turniSettimanali: Map<String, TurnoAssegnato?> // Mappa da Giorno -> Turno
+)
+
+// Data class per rappresentare un orario contrattuale
+data class OrarioContratto(
+    val settore: String,
+    val giorniLavorativi: String,
+    val orario: String,
+    val tipoContratto: String,
+    val pausa: String
+)
+
+// ViewModel per la logica di scheduling dell'admin
 class AdminSchedulingViewModel : ViewModel() {
-    
-    private val db = Firebase.firestore
-    private val settoriAlgorithm = SettoriSchedulingAlgorithm()
-    
-    // LiveData per i settori aziendali
-    private val _settori = MutableLiveData<List<SettoreAziendale>>()
-    val settori: LiveData<List<SettoreAziendale>> = _settori
-    
-    // LiveData per i turni generati (per mostrare la scheda)
-    private val _turniGenerati = MutableLiveData<List<TurnoGenerato>>()
-    val turniGenerati: LiveData<List<TurnoGenerato>> = _turniGenerati
-    
-    // LiveData per messaggi
-    private val _message = MutableLiveData<String?>()
-    val message: LiveData<String?> = _message
-    
-    // LiveData per loading
+
+    // LiveData per gli orari contrattuali
+    private val _orariContratto = MutableLiveData<List<OrarioContratto>>()
+    val orariContratto: LiveData<List<OrarioContratto>> = _orariContratto
+
+    // LiveData per la visualizzazione dei turni
+    private val _tuttiITurni = MutableLiveData<List<TurnoVisualizzato>>() // Lista completa originale
+    private val _turniFiltrati = MutableLiveData<List<TurnoVisualizzato>>()
+    val turniFiltrati: LiveData<List<TurnoVisualizzato>> = _turniFiltrati
+
+    private val _listaSettori = MutableLiveData<List<String>>()
+    val listaSettori: LiveData<List<String>> = _listaSettori
+
+    private val _listaDipendenti = MutableLiveData<List<String>>()
+    val listaDipendenti: LiveData<List<String>> = _listaDipendenti
+
+    private val _programmazioneSettimanale = MutableLiveData<List<ProgrammazioneSettimanalePersona>>()
+    val programmazioneSettimanale: LiveData<List<ProgrammazioneSettimanalePersona>> = _programmazioneSettimanale
+
     private val _isLoading = MutableLiveData<Boolean>()
     val isLoading: LiveData<Boolean> = _isLoading
-    
+
+    private val _message = MutableLiveData<String?>()
+    val message: LiveData<String?> = _message
+
+    private val db = Firebase.firestore
+    private val settoriAlgorithm = SettoriSchedulingAlgorithm()
+    private val _turniGeneratiPerSalvataggio = MutableLiveData<List<TurnoSettore>>() // Dati grezzi per il salvataggio
+
     /**
-     * Carica i settori aziendali predefiniti
+     * Carica gli orari dei contratti dall'unica fonte di verità (ContrattiPredefiniti)
+     * e li trasforma nel formato necessario per la visualizzazione.
      */
-    fun caricaSettori() {
-        _settori.value = SettoriPredefiniti.getSettoriDefault()
-        _message.value = "Settori aziendali caricati"
+    fun loadOrariContratto() {
+        val contratti = ContrattiPredefiniti.getContratti()
+        val orariPerUI = contratti.values.map { contratto ->
+            // Raggruppa gli orari per fasce orarie (es. tutti i giorni che fanno 09-18)
+            val orariRaggruppati = contratto.orari.groupBy { "${it.orarioInizio} - ${it.orarioFine}" }
+
+            // Prende la fascia oraria più comune per semplificare la visualizzazione
+            val orarioPrincipale = orariRaggruppati.maxByOrNull { it.value.size }?.key ?: "N/A"
+            val giorniLavorativi = orariRaggruppati.values.flatten()
+                .map { it.giorno.name.lowercase().replaceFirstChar { char -> char.uppercase() } }
+                .distinct()
+                .joinToString(", ")
+
+            OrarioContratto(
+                settore = contratto.settore.nomeVisualizzato,
+                giorniLavorativi = giorniLavorativi,
+                orario = orarioPrincipale,
+                tipoContratto = if (giorniLavorativi.contains(",")) "Full-time" else "Part-time", // Logica semplificata
+                pausa = "N/A" // Placeholder
+            )
+        }
+        _orariContratto.value = orariPerUI
     }
-    
+
     /**
-     * Genera turni basandosi sui settori aziendali
+     * Carica tutti i turni dalla collezione 'shifts' di Firestore.
      */
-    fun generaTurniConSettori(parametri: ParametriScheduling) {
+    fun loadShiftsForWeek(startDate: String, endDate: String) {
         _isLoading.value = true
-        _message.value = null
-        
-        // Carica prima i dipendenti
-        db.collection("Profili")
+        FirebaseFirestore.getInstance().collection("shifts")
+            .whereGreaterThanOrEqualTo("date", startDate)
+            .whereLessThanOrEqualTo("date", endDate)
+            .orderBy("date")
             .get()
-            .addOnSuccessListener { documentiProfili ->
-                val dipendenti = mutableListOf<DisponibilitaDipendente>()
-                
-                for (documento in documentiProfili) {
-                    val userId = documento.getString("userId") ?: ""
-                    val nomeCompleto = documento.getString("namelastname") ?: ""
-                    val email = documento.getString("email") ?: ""
-                    val settore = documento.getString("settore") ?: ""
-                    val ruolo = documento.getString("ruolo") ?: "USER"
-                    
-                    // Escludi admin/titolari dalla generazione turni
-                    if (ruolo == "ADMIN") {
-                        continue
-                    }
-                    
-                    if (nomeCompleto.isNotEmpty() && userId.isNotEmpty()) {
-                        dipendenti.add(
-                            DisponibilitaDipendente(
-                                userId = userId,
-                                nomeCompleto = nomeCompleto,
-                                email = email,
-                                settore = settore, // Leggo il settore dal profilo
-                                disponibilita = emptyMap() // Non serve più per i settori
-                            )
-                        )
-                    }
+            .addOnSuccessListener { documents ->
+                val turniList = mutableListOf<TurnoVisualizzato>()
+                val settori = mutableSetOf<String>()
+                val dipendenti = mutableSetOf<String>()
+
+                for (doc in documents) {
+                    val descrizione = doc.getString("description") ?: ""
+                    val settore = extractSettoreFromDescription(descrizione)
+                    val dipendentiTurno = extractDipendentiFromDescription(descrizione)
+
+                    val turno = TurnoVisualizzato(
+                        id = doc.id,
+                        data = doc.getString("date") ?: "",
+                        orario = doc.getString("time") ?: "",
+                        descrizione = descrizione,
+                        settore = settore
+                    )
+                    turniList.add(turno)
+                    settore?.let { settori.add(it) }
+                    dipendenti.addAll(dipendentiTurno)
                 }
                 
-                if (dipendenti.isEmpty()) {
-                    _message.value = "Nessun dipendente USER trovato (solo ADMIN esclusi)"
-                    _isLoading.value = false
-                    return@addOnSuccessListener
-                }
-                
-                // Carica settori predefiniti (i dipendenti hanno già il settore nel profilo)
-                val settoriAziendali = SettoriPredefiniti.getSettoriDefault()
-                val turniSettori = settoriAlgorithm.generaTurniPerSettori(settoriAziendali, dipendenti, parametri)
-                val turniPerVisualizzazione = settoriAlgorithm.convertiPerVisualizzazione(turniSettori)
-                
-                _turniGenerati.value = turniPerVisualizzazione
+                _tuttiITurni.value = turniList
+                _turniFiltrati.value = turniList // All'inizio mostra tutto
+                _listaSettori.value = listOf("Tutti i settori") + settori.sorted()
+                _listaDipendenti.value = listOf("Tutti i dipendenti") + dipendenti.sorted()
                 _isLoading.value = false
-                
-                if (turniPerVisualizzazione.isNotEmpty()) {
-                    _message.value = "✅ Generati ${turniPerVisualizzazione.size} turni per settori!"
-                } else {
-                    _message.value = "⚠️ Nessun turno generato per i settori."
-                }
-                
             }
-            .addOnFailureListener { e ->
-                Log.e("AdminScheduling", "Errore caricamento dipendenti", e)
-                _message.value = "Errore: ${e.message}"
+            .addOnFailureListener {
                 _isLoading.value = false
+                // Gestire l'errore
             }
     }
-    
-    
+
     /**
-     * Salva i turni generati in Firebase
+     * Applica i filtri per settore e/o dipendente alla lista dei turni.
      */
+    fun applyFilters(settore: String, dipendente: String) {
+        var turniDaFiltrare = _tuttiITurni.value ?: emptyList()
+
+        if (settore != "Tutti i settori") {
+            turniDaFiltrare = turniDaFiltrare.filter { it.settore == settore }
+        }
+
+        if (dipendente != "Tutti i dipendenti") {
+            turniDaFiltrare = turniDaFiltrare.filter { it.descrizione.contains(dipendente) }
+        }
+
+        _turniFiltrati.value = turniDaFiltrare
+    }
+
+    fun generaTurniPerSettimana(dataInizio: String, dataFine: String) {
+        _isLoading.value = true
+        val parametri = ParametriScheduling(dataInizio = dataInizio, dataFine = dataFine, includiWeekend = false)
+
+        db.collection("Profili").get().addOnSuccessListener { documentiProfili ->
+            val dipendenti = documentiProfili.mapNotNull { doc ->
+                DisponibilitaDipendente(
+                    userId = doc.getString("userId") ?: "",
+                    nomeCompleto = doc.getString("namelastname") ?: "",
+                    email = doc.getString("email") ?: "",
+                    settore = stringToSettoreLavorativo(doc.getString("settoreOccupazione")),
+                    disponibilita = emptyMap()
+                )
+            }
+
+            if (dipendenti.isEmpty()) {
+                _message.value = "Nessun dipendente trovato per la generazione dei turni."
+                _isLoading.value = false
+                return@addOnSuccessListener
+            }
+
+            val turniGenerati = settoriAlgorithm.generaTurniDaContratti(dipendenti, parametri)
+            _turniGeneratiPerSalvataggio.value = turniGenerati // Salva i dati grezzi per un salvataggio futuro
+
+            if (turniGenerati.isEmpty()) {
+                _message.value = "Nessun turno generato per il periodo selezionato."
+                _isLoading.value = false
+                return@addOnSuccessListener
+            }
+
+            // Converte i dati per la visualizzazione
+            val turniPerVisualizzazione = turniGenerati.map { turno ->
+                TurnoVisualizzato(
+                    id = turno.id,
+                    data = turno.data,
+                    orario = "${turno.orarioInizio} - ${turno.orarioFine}",
+                    descrizione = "Dipendenti: ${turno.dipendentiAssegnati.joinToString(", ")}",
+                    settore = turno.settore
+                )
+            }
+            
+            aggiornaProgrammazioneSettimanale(turniPerVisualizzazione)
+            _message.value = "Anteprima turni generata con successo!"
+            _isLoading.value = false
+
+        }.addOnFailureListener { e ->
+            _isLoading.value = false
+            _message.value = "Errore durante la generazione: ${e.message}"
+        }
+    }
+
     fun salvaTurniGenerati() {
-        val turni = _turniGenerati.value
-        if (turni.isNullOrEmpty()) {
-            _message.value = "Nessun turno da salvare"
+        val turniDaSalvare = _turniGeneratiPerSalvataggio.value ?: return
+        if (turniDaSalvare.isEmpty()) {
+            _message.value = "Nessun turno da salvare."
             return
         }
-        
+
         _isLoading.value = true
-        var salvati = 0
-        val totale = turni.size
-        
-        for (turnoGenerato in turni) {
-            // Converte in formato Turno per Firebase
+        val batch = db.batch()
+        turniDaSalvare.forEach { turno ->
             val turnoMap = hashMapOf(
-                "title" to "Turno ${turnoGenerato.data}",
-                "time" to "${turnoGenerato.orarioInizio} - ${turnoGenerato.orarioFine}",
-                "description" to "Dipendenti: ${turnoGenerato.dipendenti.joinToString(", ")}",
-                "date" to turnoGenerato.data,
+                "title" to "Turno ${turno.data}",
+                "time" to "${turno.orarioInizio} - ${turno.orarioFine}",
+                "description" to "Settore: ${turno.settore}, Dipendenti: ${turno.dipendentiAssegnati.joinToString(", ")}",
+                "date" to turno.data,
                 "userId" to "", // Turno admin
-                "workMode" to turnoGenerato.modalita
+                "workMode" to turno.modalita
             )
-            
-            db.collection("shifts").document(turnoGenerato.id)
-                .set(turnoMap)
-                .addOnSuccessListener {
-                    salvati++
-                    if (salvati == totale) {
-                        _message.value = "💾 Salvati tutti i $totale turni!"
-                        _isLoading.value = false
-                        _turniGenerati.value = emptyList() // Pulisce dopo salvataggio
-                    }
-                }
-                .addOnFailureListener { e ->
-                    Log.e("AdminScheduling", "Errore salvataggio", e)
-                    _message.value = "Errore salvataggio: ${e.message}"
-                    _isLoading.value = false
-                }
+            val docRef = db.collection("shifts").document(turno.id)
+            batch.set(docRef, turnoMap)
+        }
+
+        batch.commit().addOnCompleteListener {
+            if (it.isSuccessful) {
+                _message.value = "✅ Turni salvati con successo su database!"
+                _turniGeneratiPerSalvataggio.value = emptyList() // Pulisce i turni in memoria dopo il salvataggio
+            } else {
+                _message.value = "Errore durante il salvataggio dei turni: ${it.exception?.message}"
+            }
+            _isLoading.value = false
         }
     }
-    
-    /**
-     * Pulisce i turni generati
-     */
-    fun clearTurniGenerati() {
-        _turniGenerati.value = emptyList()
+
+    // Funzioni di supporto per estrarre dati dalla descrizione
+    private fun extractSettoreFromDescription(description: String): String? {
+        // Esempio: "Settore: Magazzino, Dipendenti: ..."
+        return description.substringAfter("Settore: ").substringBefore(",")
     }
-    
-    /**
-     * Pulisce i messaggi
-     */
+
+    private fun extractDipendentiFromDescription(description: String): List<String> {
+        // Esempio: "Dipendenti: Mario Rossi, Luca Bianchi"
+        return description.substringAfter("Dipendenti: ").split(", ")
+    }
+
     fun clearMessage() {
         _message.value = null
     }
-    
-    /**
-     * Assegna i dipendenti ai settori basandosi sui loro profili
-     */
-    private fun assegnaDipendentiDaiProfili(
-        settori: List<SettoreAziendale>, 
-        dipendenti: List<DisponibilitaDipendente>
-    ): List<SettoreAziendale> {
-        
-        if (dipendenti.isEmpty()) return settori
-        
-        val settoriConDipendenti = mutableListOf<SettoreAziendale>()
-        
-        // Mappa per raggruppare dipendenti per settore
-        val dipendentiPerSettore = dipendenti.groupBy { it.settore.trim().lowercase() }
-        
-        for (settore in settori) {
-            // Cerca dipendenti per questo settore con matching flessibile
-            val possibiliChiavi = listOf(
-                settore.id.lowercase(),
-                settore.nome.lowercase(),
-                settore.id.replace("_", " ").lowercase(),
-                settore.id.replace("_", "").lowercase()
-            )
-            
-            val dipendentiDelSettore = possibiliChiavi
-                .firstNotNullOfOrNull { chiave -> dipendentiPerSettore[chiave] }
-                ?: emptyList()
-            
-            val nomiDipendenti = dipendentiDelSettore.map { it.nomeCompleto }
-            
-            settoriConDipendenti.add(
-                settore.copy(dipendentiAssegnati = nomiDipendenti)
-            )
+
+    // Funzione di utilità per convertire una stringa in un enum SettoreLavorativo
+    private fun stringToSettoreLavorativo(settoreStr: String?): SettoreLavorativo {
+        val settoreNormalizzato = settoreStr?.trim() ?: return SettoreLavorativo.NON_SPECIFICATO
+
+        return when {
+            settoreNormalizzato.equals("Vendite", ignoreCase = true) -> SettoreLavorativo.VENDITE
+            settoreNormalizzato.equals("Assistenza Clienti", ignoreCase = true) -> SettoreLavorativo.ASSISTENZA_CLIENTI
+            settoreNormalizzato.equals("Amministrazione", ignoreCase = true) ||
+            settoreNormalizzato.equals("Contabilità", ignoreCase = true) ||
+            settoreNormalizzato.equals("Contabilità e amministrazione", ignoreCase = true) -> SettoreLavorativo.AMMINISTRAZIONE
+            settoreNormalizzato.equals("Magazzino e Logistica", ignoreCase = true) ||
+            settoreNormalizzato.equals("Logistica", ignoreCase = true) -> SettoreLavorativo.LOGISTICA
+            settoreNormalizzato.equals("Risorse Umane", ignoreCase = true) -> SettoreLavorativo.RISORSE_UMANE
+            settoreNormalizzato.equals("Titolare", ignoreCase = true) -> SettoreLavorativo.TITOLARE
+            else -> SettoreLavorativo.NON_SPECIFICATO
         }
-        
-        // Se nessun settore ha dipendenti, distribuiscili automaticamente
-        val totaleDipendentiAssegnati = settoriConDipendenti.sumOf { it.dipendentiAssegnati.size }
-        if (totaleDipendentiAssegnati == 0) {
-            return distribuisciDipendentiAutomaticamente(settori, dipendenti)
-        }
-        
-        return settoriConDipendenti
     }
-    
-    /**
-     * Distribuisce automaticamente i dipendenti tra i settori se non trova corrispondenze
-     */
-    private fun distribuisciDipendentiAutomaticamente(
-        settori: List<SettoreAziendale>,
-        dipendenti: List<DisponibilitaDipendente>
-    ): List<SettoreAziendale> {
-        
-        val nomiDipendenti = dipendenti.map { it.nomeCompleto }
-        val settoriConDipendenti = mutableListOf<SettoreAziendale>()
-        
-        val dipendentiPerSettore = (nomiDipendenti.size + settori.size - 1) / settori.size
-        var indiceDipendente = 0
-        
-        for (settore in settori) {
-            val dipendentiAssegnati = mutableListOf<String>()
-            
-            repeat(dipendentiPerSettore) {
-                if (indiceDipendente < nomiDipendenti.size) {
-                    dipendentiAssegnati.add(nomiDipendenti[indiceDipendente])
-                    indiceDipendente++
+
+    private fun aggiornaProgrammazioneSettimanale(turni: List<TurnoVisualizzato>) {
+        val turniPerDipendente = mutableMapOf<String, MutableList<TurnoAssegnato>>()
+
+        // Raggruppa i turni per ogni dipendente
+        for (turno in turni) {
+            val dipendenti = extractDipendentiFromDescription(turno.descrizione)
+            val giornoSettimana = getDayNameFromDate(turno.data)
+            if (giornoSettimana.isNotEmpty()) {
+                for (dipendente in dipendenti) {
+                    val turnoAssegnato = TurnoAssegnato(giornoSettimana, turno.orario, turno.settore ?: "N/D")
+                    turniPerDipendente.getOrPut(dipendente) { mutableListOf() }.add(turnoAssegnato)
                 }
             }
-            
-            settoriConDipendenti.add(
-                settore.copy(dipendentiAssegnati = dipendentiAssegnati)
-            )
         }
-        
-        return settoriConDipendenti
+
+        val giorniSettimana = listOf("Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato", "Domenica")
+
+        // Crea la lista di programmazioni settimanali
+        val programmazioneCompleta = turniPerDipendente.map { (nome, turniAssegnati) ->
+            val mappaTurni = giorniSettimana.associateWith { giorno ->
+                turniAssegnati.find { it.giorno == giorno }
+            }
+            ProgrammazioneSettimanalePersona(nome, mappaTurni)
+        }.sortedBy { it.nomeDipendente }
+
+        _programmazioneSettimanale.value = programmazioneCompleta
+    }
+
+    private fun getDayNameFromDate(dateString: String): String {
+        return try {
+            val parser = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.ITALIAN)
+            val date = parser.parse(dateString)
+            val calendar = java.util.Calendar.getInstance()
+            calendar.time = date
+            when (calendar.get(java.util.Calendar.DAY_OF_WEEK)) {
+                java.util.Calendar.MONDAY -> "Lunedì"
+                java.util.Calendar.TUESDAY -> "Martedì"
+                java.util.Calendar.WEDNESDAY -> "Mercoledì"
+                java.util.Calendar.THURSDAY -> "Giovedì"
+                java.util.Calendar.FRIDAY -> "Venerdì"
+                java.util.Calendar.SATURDAY -> "Sabato"
+                java.util.Calendar.SUNDAY -> "Domenica"
+                else -> ""
+            }
+        } catch (e: Exception) {
+            ""
+        }
     }
 }

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="8dp"
+    android:background="@drawable/grid_cell_background"
+    android:layout_margin="1dp">
+
+    <TextView
+        android:id="@+id/textViewSettoreGriglia"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textStyle="bold"
+        android:textSize="14sp"
+        android:textColor="@color/admin_primary"
+        tools:text="Vendite" />
+
+    <TextView
+        android:id="@+id/textViewDipendentiGriglia"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="12sp"
+        tools:text="- Mario Rossi\n- Luca Bianchi" />
+
+</LinearLayout>

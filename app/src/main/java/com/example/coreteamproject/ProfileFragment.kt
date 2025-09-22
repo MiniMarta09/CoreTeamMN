@@ -38,6 +38,7 @@ class ProfileFragment : Fragment() {
         "Titolare"
     )
 
+
     // Metodo principale del Fragment, eseguito quando viene creato il layout
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -80,6 +81,7 @@ class ProfileFragment : Fragment() {
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         binding.spinnerSettore.adapter = adapter
         binding.spinnerSettore.isEnabled = false
+
     }
 
     // Configura gli observer per i LiveData nel ViewModel
@@ -159,6 +161,7 @@ class ProfileFragment : Fragment() {
                 binding.spinnerSettore.setSelection(position)
             }
         }
+
     }
 
     // Abilita i campi per modificare il profilo
@@ -175,7 +178,6 @@ class ProfileFragment : Fragment() {
     private fun disabilitaModifica() {
         isEditing = false
         binding.editDataNascita.isEnabled = false
-        binding.editPassword.isEnabled = false
         binding.spinnerSettore.isEnabled = false
         binding.btnSalva.visibility = View.GONE
         binding.btnModifica.text = "Modifica Profilo"

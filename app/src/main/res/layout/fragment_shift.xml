@@ -41,102 +41,27 @@
         app:layout_constraintHorizontal_bias="0.498"
         app:layout_constraintStart_toStartOf="parent" />
 
-    <!-- Bottoni ADMIN sopra il calendario -->
-    <LinearLayout
-        android:id="@+id/buttonsLayout"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:layout_marginTop="16dp"
-        android:layout_marginBottom="16dp"
-        app:layout_constraintTop_toBottomOf="@+id/textDescriptionShift"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
-
-        <!-- Calendario normale -->
-    <CalendarView
-        android:id="@+id/calendarView"
-        android:layout_width="match_parent"
-        android:layout_height="300dp"
-        android:layout_marginTop="24dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textDescriptionShift" />
-
-        <!-- Aggiungi turno Button -->
-    <Button
-        android:id="@+id/btnAddShift"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="+ Aggiungi Turno"
-        android:backgroundTint="@color/purple_500"
-        android:textColor="@color/white"
-        android:layout_marginTop="16dp"
-        app:layout_constraintTop_toBottomOf="@+id/calendarView"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
-
-    <TextView
-        android:id="@+id/textSelectedDate"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@{viewModel.displayDate}"
-        android:textSize="16sp"
-        android:textColor="@color/purple_500"
-        android:textStyle="bold"
-        android:layout_marginTop="16dp"
-        app:layout_constraintTop_toBottomOf="@+id/btnAddShift"
-        app:layout_constraintStart_toStartOf="parent" />
-
-    <!-- ScrollView che contiene TUTTO: turni, ore mensili e bottoni -->
-    <ScrollView
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_marginTop="8dp"
-        app:layout_constraintTop_toBottomOf="@+id/textSelectedDate"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
-
-        <LinearLayout
-            android:layout_width="match_parent"
+        <!-- TabLayout per la navigazione tra le sezioni -->
+        <com.google.android.material.tabs.TabLayout
+            android:id="@+id/tabLayout"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:layout_marginTop="16dp"
+            app:layout_constraintTop_toBottomOf="@+id/textDescriptionShift"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:tabMode="fixed"
+            app:tabGravity="fill"/>
 
-            <!-- Layout per i turni -->
-            <LinearLayout
-                android:id="@+id/shiftsLayout"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical" />
-
-            <!-- Ore mensili dentro lo scroll -->
-            <TextView
-                android:id="@+id/textMonthlyHours"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@{viewModel.monthlyHours}"
-                android:textColor="@color/purple_500"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:gravity="center"
-                android:background="@color/background_cream"
-                android:padding="12dp"
-                android:layout_marginTop="16dp" />
-
-            <!-- Layout per i bottoni in fondo -->
-            <LinearLayout
-                android:id="@+id/bottomButtonsLayout"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:layout_marginTop="16dp"
-                android:paddingBottom="20dp" />
-
-        </LinearLayout>
-
-    </ScrollView>
+        <!-- ViewPager2 per contenere i fragment delle diverse sezioni -->
+        <androidx.viewpager2.widget.ViewPager2
+            android:id="@+id/viewPager"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            app:layout_constraintTop_toBottomOf="@+id/tabLayout"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"/>
 
     <!-- Progress Bar -->
     <ProgressBar

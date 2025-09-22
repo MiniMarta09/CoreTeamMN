@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:paddingTop="4dp"
+    android:paddingBottom="4dp">
+
+    <TextView
+        android:id="@+id/textViewGiorno"
+        android:layout_width="90dp"
+        android:layout_height="wrap_content"
+        android:textStyle="bold"
+        tools:text="Lunedì" />
+
+    <TextView
+        android:id="@+id/textViewDettagliTurno"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        tools:text="09:00 - 17:00 (Vendite)" />
+
+</LinearLayout>

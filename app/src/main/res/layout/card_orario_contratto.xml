@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="8dp"
+    app:cardElevation="4dp"
+    app:cardCornerRadius="8dp">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="16dp">
+
+        <TextView
+            android:id="@+id/textViewSettore"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:textStyle="bold"
+            android:textSize="18sp"
+            android:textColor="@color/admin_primary"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            tools:text="Magazzino e Logistica" />
+
+        <TextView
+            android:id="@+id/textViewTipoContratto"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:background="@drawable/chip_background"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp"
+            android:textColor="@android:color/white"
+            android:textSize="12sp"
+            app:layout_constraintTop_toBottomOf="@+id/textViewSettore"
+            app:layout_constraintStart_toStartOf="parent"
+            tools:text="Full-time" />
+
+        <TextView
+            android:id="@+id/labelGiorni"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Giorni Lavorativi:"
+            android:textStyle="bold"
+            app:layout_constraintTop_toBottomOf="@+id/textViewTipoContratto"
+            app:layout_constraintStart_toStartOf="parent" />
+
+        <TextView
+            android:id="@+id/textViewGiorni"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="@+id/labelGiorni"
+            app:layout_constraintBottom_toBottomOf="@+id/labelGiorni"
+            app:layout_constraintStart_toEndOf="@+id/labelGiorni"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginStart="8dp"
+            tools:text="Lunedì - Venerdì" />
+
+        <TextView
+            android:id="@+id/labelOrario"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Orario:"
+            android:textStyle="bold"
+            app:layout_constraintTop_toBottomOf="@+id/labelGiorni"
+            app:layout_constraintStart_toStartOf="parent" />
+
+        <TextView
+            android:id="@+id/textViewOrario"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="@+id/labelOrario"
+            app:layout_constraintBottom_toBottomOf="@+id/labelOrario"
+            app:layout_constraintStart_toEndOf="@+id/labelOrario"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginStart="8dp"
+            tools:text="08:30 - 17:30" />
+
+        <TextView
+            android:id="@+id/labelPausa"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Pausa:"
+            android:textStyle="bold"
+            app:layout_constraintTop_toBottomOf="@+id/labelOrario"
+            app:layout_constraintStart_toStartOf="parent" />
+
+        <TextView
+            android:id="@+id/textViewPausa"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="@+id/labelPausa"
+            app:layout_constraintBottom_toBottomOf="@+id/labelPausa"
+            app:layout_constraintStart_toEndOf="@+id/labelPausa"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginStart="8dp"
+            tools:text="12:30 - 14:00" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</com.google.android.material.card.MaterialCardView>

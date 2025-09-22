@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginStart="8dp"
+    android:layout_marginTop="8dp"
+    android:layout_marginEnd="8dp"
+    android:layout_marginBottom="8dp"
+    app:cardCornerRadius="8dp"
+    app:cardElevation="4dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:id="@+id/textViewNomeDipendente"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/admin_primary"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="4dp"
+            tools:text="Mario Rossi" />
+
+        <TextView
+            android:id="@+id/textViewSettoreDipendente"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="14sp"
+            android:textStyle="italic"
+            android:layout_marginBottom="12dp"
+            tools:text="Vendite" />
+
+        <include layout="@layout/item_turno_giorno" android:id="@+id/lunedi"/>
+        <include layout="@layout/item_turno_giorno" android:id="@+id/martedi"/>
+        <include layout="@layout/item_turno_giorno" android:id="@+id/mercoledi"/>
+        <include layout="@layout/item_turno_giorno" android:id="@+id/giovedi"/>
+        <include layout="@layout/item_turno_giorno" android:id="@+id/venerdi"/>
+        <include layout="@layout/item_turno_giorno" android:id="@+id/sabato"/>
+        <include layout="@layout/item_turno_giorno" android:id="@+id/domenica"/>
+
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>
