@@ -17,6 +17,7 @@ class VisualizzaTurniFragment : Fragment() {
 
     private lateinit var binding: FragmentVisualizzaTurniBinding
     private val viewModel: AdminSchedulingViewModel by activityViewModels()
+    private val usersViewModel: UsersViewModel by activityViewModels()
     private lateinit var adapter: VisualizzaTurniAdapter
 
     override fun onCreateView(
@@ -32,8 +33,8 @@ class VisualizzaTurniFragment : Fragment() {
         setupObservers()
         setupListeners()
 
-        // All'avvio, non carichiamo nulla. La vista si popola o dopo una generazione
-        // o quando l'utente seleziona una settimana da visualizzare.
+        // Carica automaticamente i turni della settimana corrente all'avvio
+        loadCurrentWeekShifts()
 
         return binding.root
     }
@@ -74,8 +75,19 @@ class VisualizzaTurniFragment : Fragment() {
                 // Aggiorna il testo della settimana selezionata
                 binding.textViewSettimanaSelezionata.text = formatWeekRange(selectedWeek.first, selectedWeek.second)
                 
-                // Chiama il ViewModel per caricare i turni SALVATI per quella settimana
-                viewModel.loadShiftsForWeek(startDateStr, endDateStr)
+                // Carica i turni appropriati in base al ruolo dell'utente
+                usersViewModel.userRole.value?.let { userRole ->
+                    when (userRole) {
+                        UserRole.ADMIN -> {
+                            // Admin vede tutti i turni della settimana
+                            viewModel.loadShiftsForWeek(startDateStr, endDateStr)
+                        }
+                        UserRole.USER -> {
+                            // Dipendente vede solo i suoi turni personali
+                            viewModel.loadShiftsForEmployee(startDateStr, endDateStr)
+                        }
+                    }
+                }
             }
             .setNegativeButton("Annulla", null)
             .show()
@@ -100,6 +112,43 @@ class VisualizzaTurniFragment : Fragment() {
             calendar.add(Calendar.DAY_OF_WEEK, 1) // Passa alla settimana successiva
         }
         return weeks
+    }
+
+    /**
+     * Carica automaticamente i turni della settimana corrente all'avvio del fragment
+     */
+    private fun loadCurrentWeekShifts() {
+        val calendar = Calendar.getInstance()
+        calendar.firstDayOfWeek = Calendar.MONDAY
+        calendar.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY)
+        
+        val startOfWeek = calendar.time
+        calendar.add(Calendar.DAY_OF_WEEK, 6)
+        val endOfWeek = calendar.time
+        
+        val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+        val startDateStr = sdf.format(startOfWeek)
+        val endDateStr = sdf.format(endOfWeek)
+        
+        // Aggiorna il testo della settimana selezionata
+        binding.textViewSettimanaSelezionata.text = formatWeekRange(startOfWeek, endOfWeek)
+        
+        // Controlla il ruolo dell'utente per caricare i turni appropriati
+        usersViewModel.userRole.observe(viewLifecycleOwner) { userRole ->
+            when (userRole) {
+                UserRole.ADMIN -> {
+                    // Admin vede tutti i turni della settimana
+                    viewModel.loadShiftsForWeek(startDateStr, endDateStr)
+                }
+                UserRole.USER -> {
+                    // Dipendente vede solo i suoi turni personali
+                    viewModel.loadShiftsForEmployee(startDateStr, endDateStr)
+                }
+                else -> {
+                    // Ruolo non definito, non caricare nulla
+                }
+            }
+        }
     }
 
 }

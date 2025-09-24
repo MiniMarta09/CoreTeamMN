@@ -116,18 +116,23 @@ class AdminSchedulingViewModel : ViewModel() {
             return
         }
 
+        Log.d("TURNI_DEBUG", "CARICAMENTO - CurrentUserId: $currentUserId, Periodo: $startDate - $endDate")
+
+        // Rimuoviamo il filtro userId per evitare l'errore di indice Firebase
+        // I turni sono aziendali e devono essere visibili a tutti gli admin
         FirebaseFirestore.getInstance().collection("shifts")
-            .whereEqualTo("userId", currentUserId) // Filtro per l'utente corrente
             .whereGreaterThanOrEqualTo("date", startDate)
             .whereLessThanOrEqualTo("date", endDate)
             .orderBy("date")
             .get()
             .addOnSuccessListener { documents ->
+                Log.d("TURNI_DEBUG", "CARICAMENTO - Trovati ${documents.size()} documenti")
                 val turniList = mutableListOf<TurnoVisualizzato>()
                 val settori = mutableSetOf<String>()
                 val dipendenti = mutableSetOf<String>()
 
                 for (doc in documents) {
+                    Log.d("TURNI_DEBUG", "CARICAMENTO - Doc: ${doc.id}, UserId: ${doc.getString("userId")}, Data: ${doc.getString("date")}")
                     val descrizione = doc.getString("description") ?: ""
 
                     val settore = extractSettoreFromDescription(descrizione)
@@ -149,11 +154,107 @@ class AdminSchedulingViewModel : ViewModel() {
                 _turniFiltrati.value = turniList // All'inizio mostra tutto
                 _listaSettori.value = listOf("Tutti i settori") + settori.sorted()
                 _listaDipendenti.value = listOf("Tutti i dipendenti") + dipendenti.sorted()
+                
+                // IMPORTANTE: Aggiorna anche la programmazione settimanale per la visualizzazione
+                Log.d("TURNI_DEBUG", "CARICAMENTO - Aggiornamento programmazione settimanale con ${turniList.size} turni")
+                aggiornaProgrammazioneSettimanale(turniList)
                 _isLoading.value = false
             }
             .addOnFailureListener {
                 _isLoading.value = false
                 // Gestire l'errore
+            }
+    }
+
+    /**
+     * Carica i turni per un dipendente specifico in un periodo di tempo
+     */
+    fun loadShiftsForEmployee(startDate: String, endDate: String) {
+        _isLoading.value = true
+        val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
+        if (currentUserId == null) {
+            _message.value = "Utente non autenticato, impossibile caricare i turni."
+            _isLoading.value = false
+            return
+        }
+
+        Log.d("TURNI_DEBUG", "CARICAMENTO DIPENDENTE - CurrentUserId: $currentUserId, Periodo: $startDate - $endDate")
+
+        // Prima otteniamo il nome del dipendente dal profilo
+        FirebaseFirestore.getInstance().collection("Profili")
+            .document(currentUserId)
+            .get()
+            .addOnSuccessListener { profileDoc ->
+                val nomeCompleto = profileDoc.getString("namelastname") ?: ""
+                Log.d("TURNI_DEBUG", "CARICAMENTO DIPENDENTE - Nome dipendente: $nomeCompleto")
+                
+                if (nomeCompleto.isNotEmpty()) {
+                    // Ora cerchiamo i turni che contengono questo dipendente
+                    FirebaseFirestore.getInstance().collection("shifts")
+                        .whereGreaterThanOrEqualTo("date", startDate)
+                        .whereLessThanOrEqualTo("date", endDate)
+                        .orderBy("date")
+                        .get()
+                        .addOnSuccessListener { documents ->
+                            Log.d("TURNI_DEBUG", "CARICAMENTO DIPENDENTE - Trovati ${documents.size()} documenti totali")
+                            val turniList = mutableListOf<TurnoVisualizzato>()
+                            val settori = mutableSetOf<String>()
+                            val dipendenti = mutableSetOf<String>()
+
+                            for (doc in documents) {
+                                val description = doc.getString("description") ?: ""
+                                
+                                // Controlla se il dipendente è assegnato a questo turno
+                                if (description.contains(nomeCompleto)) {
+                                    Log.d("TURNI_DEBUG", "CARICAMENTO DIPENDENTE - Turno trovato per $nomeCompleto: ${doc.id}")
+                                    
+                                    val data = doc.getString("date") ?: ""
+                                    val time = doc.getString("time") ?: ""
+                                    
+                                    // Estrai settore e dipendenti dalla descrizione
+                                    val settore = extractSettoreFromDescription(description)
+                                    val dipendentiTurno = extractDipendentiFromDescription(description)
+                                    
+                                    val turno = TurnoVisualizzato(
+                                        id = doc.id,
+                                        data = data,
+                                        orario = time,
+                                        descrizione = description,
+                                        settore = settore
+                                    )
+                                    turniList.add(turno)
+                                    settore?.let { settori.add(it) }
+                                    dipendenti.addAll(dipendentiTurno)
+                                }
+                            }
+
+                            Log.d("TURNI_DEBUG", "CARICAMENTO DIPENDENTE - Turni filtrati per dipendente: ${turniList.size}")
+                            
+                            _tuttiITurni.value = turniList
+                            _turniFiltrati.value = turniList
+                            _listaSettori.value = listOf("Tutti i settori") + settori.sorted()
+                            _listaDipendenti.value = listOf("Tutti i dipendenti") + dipendenti.sorted()
+                            
+                            // Aggiorna anche la programmazione settimanale per la visualizzazione
+                            Log.d("TURNI_DEBUG", "CARICAMENTO DIPENDENTE - Aggiornamento programmazione settimanale con ${turniList.size} turni")
+                            aggiornaProgrammazioneSettimanale(turniList)
+                            _isLoading.value = false
+                        }
+                        .addOnFailureListener { e ->
+                            Log.e("TURNI_DEBUG", "CARICAMENTO DIPENDENTE - Errore caricamento turni: ${e.message}")
+                            _isLoading.value = false
+                            _message.value = "Errore durante il caricamento dei turni: ${e.message}"
+                        }
+                } else {
+                    Log.e("TURNI_DEBUG", "CARICAMENTO DIPENDENTE - Nome dipendente non trovato nel profilo")
+                    _isLoading.value = false
+                    _message.value = "Profilo dipendente non trovato."
+                }
+            }
+            .addOnFailureListener { e ->
+                Log.e("TURNI_DEBUG", "CARICAMENTO DIPENDENTE - Errore caricamento profilo: ${e.message}")
+                _isLoading.value = false
+                _message.value = "Errore durante il caricamento del profilo: ${e.message}"
             }
     }
 
@@ -303,6 +404,7 @@ class AdminSchedulingViewModel : ViewModel() {
                 "userId" to adminId, // Usa l'ID dell'admin corretto
                 "workMode" to turno.modalita
             )
+            Log.d("TURNI_DEBUG", "SALVATAGGIO - AdminId: $adminId, Data: ${turno.data}, DocId: ${turno.id}")
             val docRef = db.collection("shifts").document(turno.id)
             batch.set(docRef, turnoMap)
         }
