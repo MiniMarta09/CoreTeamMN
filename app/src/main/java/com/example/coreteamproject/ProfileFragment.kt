@@ -151,6 +151,10 @@ class ProfileFragment : Fragment() {
 
     // Aggiorna i campi del profilo utente con i dati ricevuti
     private fun aggiornaCampiProfilo(dipendente: Dipendente) {
+        // Nome e Cognome ed Email presi dal profilo Firestore se disponibili
+        binding.textNamelastname.text = if (dipendente.namelastname.isNotEmpty()) dipendente.namelastname else "Non disponibile"
+        binding.textEmail.text = if (dipendente.email.isNotEmpty()) dipendente.email else "Non disponibile"
+
         binding.editDataNascita.setText(dipendente.dataNascita)
         binding.editPassword.setText("") // per sicurezza, non si mostra la password
 

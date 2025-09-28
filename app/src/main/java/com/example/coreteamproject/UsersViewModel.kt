@@ -149,9 +149,13 @@ class UsersViewModel : ViewModel() {
                             UserRole.USER
                         }
                         
+                        // Nome: preferisci quello su Firestore se non vuoto; altrimenti displayName; altrimenti email
+                        val nameFromDoc = document.getString("namelastname")?.trim().orEmpty()
+                        val finalName = if (nameFromDoc.isNotEmpty()) nameFromDoc else (user.displayName ?: (user.email ?: ""))
+
                         val dipendente = Dipendente(
                             userId = document.getString("userId") ?: user.uid,
-                            namelastname = document.getString("namelastname") ?: (user.displayName ?: ""),
+                            namelastname = finalName,
                             email = user.email ?: "",
                             dataNascita = document.getString("dataNascita") ?: "",
                             settoreOccupazione = document.getString("settoreOccupazione") ?: "",
@@ -198,7 +202,7 @@ class UsersViewModel : ViewModel() {
                     if (document.exists()) {
                         // Il documento esiste, aggiorna solo i campi necessari (preserva il ruolo)
                         val aggiornamenti = hashMapOf<String, Any>(
-                            "namelastname" to (user.displayName ?: ""),
+                            // non aggiornare "namelastname" qui per non sovrascrivere con vuoto
                             "dataNascita" to dataNascita,
                             "email" to (user.email ?: ""),
                             "password" to password,
@@ -221,8 +225,13 @@ class UsersViewModel : ViewModel() {
                             }
                     } else {
                         // Il documento non esiste, crealo con il ruolo USER di default
+                        val defaultName = when {
+                            !user.displayName.isNullOrBlank() -> user.displayName!!
+                            !user.email.isNullOrBlank() -> user.email!!.substringBefore('@')
+                            else -> ""
+                        }
                         val profiloDipendente = hashMapOf(
-                            "namelastname" to (user.displayName ?: ""),
+                            "namelastname" to defaultName,
                             "dataNascita" to dataNascita,
                             "email" to (user.email ?: ""),
                             "password" to password,
