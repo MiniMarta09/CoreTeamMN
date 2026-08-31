@@ -111,7 +111,7 @@ CoreTeam/
 
 ## Documentazione
 
-La presentazione completa del progetto è disponibile nel file [`presentazioneCoreteam.pdf`](./presentazioneCoreteam.pdf), che illustra obiettivi, funzionalità e architettura dell'applicazione.
+La presentazione completa del progetto è disponibile nel file [`presentazioneCoreTeam.pdf`](./presentazioneCoreTeam.pdf), che illustra obiettivi, funzionalità e architettura dell'applicazione.
 
 ---
 
