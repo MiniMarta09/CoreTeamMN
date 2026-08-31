@@ -8,7 +8,7 @@ Progetto realizzato per il corso di Programmazione Mobile, Corso di Laurea Trien
 
 ---
 
-## Obiettivo
+## 🎯 Obiettivo
 
 CoreTeam nasce per aiutare le piccole e medie aziende nella gestione operativa quotidiana, offrendo al tempo stesso funzionalità dedicate alla tutela della salute e del benessere dei dipendenti.
 
@@ -18,7 +18,7 @@ L'app distingue due ruoli utente, con permessi e viste differenti:
 
 ---
 
-## Stack tecnologico
+## 🛠️ Stack tecnologico
 
 - **Linguaggio:** Kotlin
 - **Piattaforma:** Android
@@ -29,7 +29,7 @@ L'app distingue due ruoli utente, con permessi e viste differenti:
 
 ---
 
-## Funzionalità principali
+## ⚙️ Funzionalità principali
 
 ### Login e Autenticazione
 Accesso tramite email e password o account Google. I ruoli (Dipendente/Capo) sono memorizzati esclusivamente su Firestore e determinano le viste e i permessi disponibili.
@@ -70,7 +70,7 @@ Feedback mensile personale su tre parametri chiave (stress, rapporto con i colle
 
 ---
 
-## Funzionalità riservate al ruolo Capo
+## 👑 Funzionalità riservate al ruolo Capo
 
 - **Accettazione Richieste** — visualizzazione di tutte le richieste dei dipendenti con possibilità di accettarle o rifiutarle
 - **Generazione Turni (Smart Scheduling)** — algoritmo di scheduling automatico che genera i turni per tutti i settori tenendo conto di:
@@ -82,7 +82,7 @@ Feedback mensile personale su tre parametri chiave (stress, rapporto con i colle
 
 ---
 
-## Struttura del progetto
+## 📁 Struttura del progetto
 
 ```
 CoreTeam/
@@ -97,7 +97,7 @@ CoreTeam/
 
 ---
 
-## Come avviare il progetto
+## 🚀 Come avviare il progetto
 
 1. Clona la repository:
    ```bash
@@ -109,12 +109,18 @@ CoreTeam/
 
 ---
 
-## Documentazione
+## 📄 Documentazione
 
 La presentazione completa del progetto è disponibile nel file [`presentazioneCoreTeam.pdf`](./presentazioneCoreTeam.pdf), che illustra obiettivi, funzionalità e architettura dell'applicazione.
 
 ---
 
-## Contesto accademico
+## 🎓 Contesto accademico
 
 Progetto sviluppato per il corso di Programmazione Mobile, Ingegneria Informatica, Università di Genova — DIBRIS.
+
+---
+
+## 📜 License
+
+Questo progetto è distribuito sotto **licenza MIT** — vedi il file [LICENSE](./LICENSE) per i dettagli.
